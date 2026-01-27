@@ -320,15 +320,17 @@
             width: 100%;
         }
 
-        /* CONFIG GRID */
+        /* Убрал grid для конфигурации - теперь блоки вертикальные */
         .config-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 20px;
+            display: block;
             margin-bottom: 20px;
         }
+        
+        /* Для мобильных делаем адаптацию */
         @media (max-width: 768px) {
-            .config-grid { grid-template-columns: 1fr; }
+            .config-grid {
+                display: block; /* Остается вертикальным на мобильных */
+            }
         }
 
     </style>
@@ -345,35 +347,36 @@
 
     <div class="dashboard">
         <aside>
-            <div class="config-grid">
-                <div class="panel">
-                    <h3><i class="fas fa-drone"></i> Выбор дрона</h3>
-                    <div class="form-group">
-                        <label>Модель дрона</label>
-                        <select id="droneSelect"></select>
-                        <div id="droneSpecs" style="margin-top:5px; font-size:0.75rem; color:var(--text-muted);"></div>
-                    </div>
-                </div>
-
-                <div class="panel">
-                    <h3><i class="fas fa-map-marker-alt"></i> Выбор локации</h3>
-                    <div class="form-group">
-                        <label>Аэропорт (ICAO / Город)</label>
-                        <div style="position: relative;">
-                            <input type="text" id="searchInput" placeholder="Начните вводить (напр. Moscow)..." autocomplete="off">
-                            <i class="fas fa-search" style="position: absolute; right: 10px; top: 12px; color: var(--text-muted);"></i>
-                        </div>
-                        <div id="searchResults" class="search-dropdown"></div>
-                    </div>
-
-                    <div class="form-group">
-                        <label>API Key (OpenWeatherMap)</label>
-                        <input type="password" id="apiKey" value="f3843336b2145e67e0c0614fb8585cc1">
-                        <small style="color: var(--text-muted); font-size: 0.7rem;">Требуется для прогноза</small>
-                    </div>
+            <!-- Блок дрона -->
+            <div class="panel">
+                <h3><i class="fas fa-drone"></i> Выбор дрона</h3>
+                <div class="form-group">
+                    <label>Модель дрона</label>
+                    <select id="droneSelect"></select>
+                    <div id="droneSpecs" style="margin-top:5px; font-size:0.75rem; color:var(--text-muted);"></div>
                 </div>
             </div>
 
+            <!-- Блок локации -->
+            <div class="panel">
+                <h3><i class="fas fa-map-marker-alt"></i> Выбор локации</h3>
+                <div class="form-group">
+                    <label>Аэропорт (ICAO / Город)</label>
+                    <div style="position: relative;">
+                        <input type="text" id="searchInput" placeholder="Начните вводить (напр. Moscow)..." autocomplete="off">
+                        <i class="fas fa-search" style="position: absolute; right: 10px; top: 12px; color: var(--text-muted);"></i>
+                    </div>
+                    <div id="searchResults" class="search-dropdown"></div>
+                </div>
+
+                <div class="form-group">
+                    <label>API Key (OpenWeatherMap)</label>
+                    <input type="password" id="apiKey" value="f3843336b2145e67e0c0614fb8585cc1">
+                    <small style="color: var(--text-muted); font-size: 0.7rem;">Требуется для прогноза</small>
+                </div>
+            </div>
+
+            <!-- Кнопка анализа -->
             <div class="panel">
                 <button class="btn" onclick="runAnalysis()">
                     <i class="fas fa-satellite-dish"></i> Анализ условий
