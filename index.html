@@ -140,15 +140,6 @@
             max-height: 500px;
             opacity: 1;
         }
-        
-        /* Показываем блок с данными только когда раскрыт */
-        .raw-data-container {
-            display: none;
-        }
-        
-        .raw-data-container.expanded {
-            display: block;
-        }
 
         /* FORMS */
         .form-group { margin-bottom: 15px; position: relative; }
@@ -204,22 +195,90 @@
         .btn:hover { background: #2563eb; }
         .btn:active { transform: scale(0.98); }
 
-        /* METRICS GRID */
+        /* METRICS GRID - теперь 2 ряда */
         .metrics-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            grid-template-columns: repeat(4, 1fr);
             gap: 15px;
             margin-bottom: 20px;
         }
+        
+        /* Первый ряд - ветер и направление */
+        .wind-metrics {
+            grid-column: span 4;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+        
+        /* Второй ряд - температура, влажность и пр. */
+        .other-metrics {
+            grid-column: span 4;
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+        }
+        
+        @media (max-width: 1200px) {
+            .wind-metrics { grid-template-columns: repeat(3, 1fr); }
+            .other-metrics { grid-template-columns: repeat(4, 1fr); }
+        }
+        
+        @media (max-width: 768px) {
+            .wind-metrics { grid-template-columns: repeat(2, 1fr); }
+            .other-metrics { grid-template-columns: repeat(2, 1fr); }
+        }
+        
+        @media (max-width: 480px) {
+            .wind-metrics { grid-template-columns: 1fr; }
+            .other-metrics { grid-template-columns: 1fr; }
+        }
+
         .metric-box {
             background: rgba(255,255,255,0.02);
             padding: 15px;
             border-radius: 8px;
             text-align: center;
             border: 1px solid transparent;
+            min-height: 100px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
         }
-        .metric-val { font-size: 1.4rem; font-weight: 700; font-family: var(--font-mono); color: var(--text-main); }
-        .metric-lbl { font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; margin-top: 5px; }
+        
+        .metric-box.wind-box {
+            min-height: 120px;
+        }
+        
+        .metric-val { 
+            font-size: 1.6rem; 
+            font-weight: 700; 
+            font-family: var(--font-mono); 
+            color: var(--text-main);
+            margin-bottom: 5px;
+        }
+        
+        .metric-val-small {
+            font-size: 1rem;
+            font-weight: 400;
+            color: var(--text-muted);
+            margin-top: 5px;
+        }
+        
+        .metric-dir {
+            font-size: 0.9rem;
+            color: var(--accent);
+            font-weight: 600;
+            margin-top: 5px;
+        }
+        
+        .metric-lbl { 
+            font-size: 0.7rem; 
+            color: var(--text-muted); 
+            text-transform: uppercase; 
+            margin-top: 5px;
+        }
 
         .status-ok { border-color: var(--success); background: rgba(16, 185, 129, 0.05); }
         .status-warn { border-color: var(--warning); background: rgba(245, 158, 11, 0.05); }
@@ -320,19 +379,6 @@
             width: 100%;
         }
 
-        /* Убрал grid для конфигурации - теперь блоки вертикальные */
-        .config-grid {
-            display: block;
-            margin-bottom: 20px;
-        }
-        
-        /* Для мобильных делаем адаптацию */
-        @media (max-width: 768px) {
-            .config-grid {
-                display: block; /* Остается вертикальным на мобильных */
-            }
-        }
-
     </style>
 </head>
 <body>
@@ -423,22 +469,55 @@
                     </div>
                 </div>
 
+                <!-- МЕТРИКИ В ДВА РЯДА -->
                 <div class="metrics-grid">
-                    <div class="metric-box" id="boxWind">
-                        <div class="metric-val" id="valWind">--</div>
-                        <div class="metric-lbl">Ветер (м/с)</div>
+                    <!-- ПЕРВЫЙ РЯД: ВЕТЕР -->
+                    <div class="wind-metrics">
+                        <!-- Ветер (скорость) -->
+                        <div class="metric-box wind-box" id="boxWind">
+                            <div class="metric-val" id="valWind">--</div>
+                            <div class="metric-lbl">Скорость ветра (м/с)</div>
+                        </div>
+                        
+                        <!-- Порывы -->
+                        <div class="metric-box wind-box" id="boxGust">
+                            <div class="metric-val" id="valGust">--</div>
+                            <div class="metric-lbl">Порывы (м/с)</div>
+                        </div>
+                        
+                        <!-- Направление -->
+                        <div class="metric-box wind-box" id="boxWindDir">
+                            <div class="metric-val" id="valWindDirDeg">--°</div>
+                            <div class="metric-dir" id="valWindDirCard">--</div>
+                            <div class="metric-lbl">Направление</div>
+                        </div>
                     </div>
-                    <div class="metric-box" id="boxGust">
-                        <div class="metric-val" id="valGust">--</div>
-                        <div class="metric-lbl">Порывы (м/с)</div>
-                    </div>
-                    <div class="metric-box" id="boxTemp">
-                        <div class="metric-val" id="valTemp">--</div>
-                        <div class="metric-lbl">Температура</div>
-                    </div>
-                    <div class="metric-box" id="boxVis">
-                        <div class="metric-val" id="valVis">--</div>
-                        <div class="metric-lbl">Видимость</div>
+                    
+                    <!-- ВТОРОЙ РЯД: ТЕМПЕРАТУРА, ВЛАЖНОСТЬ, ВИДИМОСТЬ, ОСАДКИ -->
+                    <div class="other-metrics">
+                        <!-- Температура -->
+                        <div class="metric-box" id="boxTemp">
+                            <div class="metric-val" id="valTemp">--</div>
+                            <div class="metric-lbl">Температура (°C)</div>
+                        </div>
+                        
+                        <!-- Влажность -->
+                        <div class="metric-box" id="boxHumidity">
+                            <div class="metric-val" id="valHumidity">--</div>
+                            <div class="metric-lbl">Влажность (%)</div>
+                        </div>
+                        
+                        <!-- Видимость -->
+                        <div class="metric-box" id="boxVis">
+                            <div class="metric-val" id="valVis">--</div>
+                            <div class="metric-lbl">Видимость</div>
+                        </div>
+                        
+                        <!-- Осадки -->
+                        <div class="metric-box" id="boxPrecip">
+                            <div class="metric-val" id="valPrecip">--</div>
+                            <div class="metric-lbl">Осадки</div>
+                        </div>
                     </div>
                 </div>
 
@@ -619,7 +698,26 @@
         }
     }
 
-    /* ================= 4. SEARCH LOGIC ================= */
+    /* ================= 4. ФУНКЦИЯ ПРЕОБРАЗОВАНИЯ ГРАДУСОВ В РУМБЫ ================= */
+    function degreesToCardinal(degrees) {
+        if (degrees === null || degrees === undefined) return 'N/A';
+        
+        // Нормализуем градусы
+        const normalized = (degrees % 360 + 360) % 360;
+        
+        // Определяем румбы
+        const cardinals = [
+            "С", "ССВ", "СВ", "ВСВ", 
+            "В", "ВЮВ", "ЮВ", "ЮЮВ",
+            "Ю", "ЮЮЗ", "ЮЗ", "ЗЮЗ",
+            "З", "ЗСЗ", "СЗ", "ССЗ"
+        ];
+        
+        const index = Math.round(normalized / 22.5) % 16;
+        return cardinals[index];
+    }
+
+    /* ================= 5. SEARCH LOGIC ================= */
     function handleSearch(e) {
         if (!isAirportsLoaded) {
             showToast("База аэропортов еще загружается...", "warning");
@@ -668,7 +766,7 @@
         document.getElementById('searchResults').style.display = 'none';
     }
 
-    /* ================= 5. MAIN LOGIC ================= */
+    /* ================= 6. MAIN LOGIC ================= */
     async function runAnalysis() {
         if (!selectedAirport) {
             showToast("Сначала выберите аэропорт из списка!", "error");
@@ -750,7 +848,7 @@
         }
     }
 
-    /* ================= 6. DATA FETCHERS ================= */
+    /* ================= 7. DATA FETCHERS ================= */
     async function fetchMetar(icao) {
         if (!icao || icao.length !== 4) {
             throw new Error("Неверный код ICAO");
@@ -785,17 +883,40 @@
         
         const data = await res.json();
         
+        // Получаем осадки из данных
+        let precip = "Нет";
+        let precipAmount = 0;
+        
+        if (data.rain && data.rain["1h"]) {
+            precip = `Дождь: ${data.rain["1h"]}мм`;
+            precipAmount = data.rain["1h"];
+        } else if (data.snow && data.snow["1h"]) {
+            precip = `Снег: ${data.snow["1h"]}мм`;
+            precipAmount = data.snow["1h"];
+        } else if (data.weather && data.weather[0]) {
+            const weatherMain = data.weather[0].main.toLowerCase();
+            if (weatherMain.includes("rain") || weatherMain.includes("drizzle")) {
+                precip = "Дождь";
+            } else if (weatherMain.includes("snow")) {
+                precip = "Снег";
+            }
+        }
+        
         return {
             source: 'OpenWeather Current',
             raw: JSON.stringify(data, null, 2),
             parsed: {
                 wind: data.wind.speed,
-                gust: data.wind.gust || data.wind.speed, // Если порывов нет, используем скорость ветра
+                gust: data.wind.gust || data.wind.speed,
+                windDir: data.wind.deg || 0,
                 temp: data.main.temp,
-                vis: data.visibility,
-                rain: data.weather.some(w => 
-                    w.main === 'Rain' || w.main === 'Snow' || w.main === 'Drizzle'
-                )
+                humidity: data.main.humidity,
+                visibility: data.visibility || 10000, // Если undefined, ставим 10000
+                precip: precip,
+                precipAmount: precipAmount,
+                pressure: data.main.pressure,
+                rain: data.weather && data.weather[0] && 
+                      (data.weather[0].main === 'Rain' || data.weather[0].main === 'Snow' || data.weather[0].main === 'Drizzle')
             }
         };
     }
@@ -810,22 +931,34 @@
         return await res.json();
     }
 
-    /* ================= 7. PARSERS & UI ================= */
+    /* ================= 8. PARSERS & UI ================= */
     function parseMetar(metar) {
         const data = { 
             wind: 0, 
             gust: 0, 
+            windDir: 0,
             temp: 20, 
-            vis: 9999, 
+            humidity: null, // В METAR нет влажности
+            visibility: 9999, 
+            precip: "Нет",
+            precipAmount: 0,
+            pressure: null,
             rain: false 
         };
 
         // Ветер: форматы "12010KT", "12010G20KT", "VRB05MPS"
-        // Более точный парсинг
         const windRegex = /(\d{3}|VRB)(\d{2,3})(G(\d{2,3}))?(KT|MPS|KMH)/;
         const windMatch = metar.match(windRegex);
         
         if (windMatch) {
+            // Направление ветра
+            if (windMatch[1] !== 'VRB') {
+                data.windDir = parseInt(windMatch[1]);
+            } else {
+                data.windDir = null; // Переменный ветер
+            }
+            
+            // Скорость ветра
             let speed = parseInt(windMatch[2]);
             let gust = windMatch[4] ? parseInt(windMatch[4]) : speed;
             
@@ -857,19 +990,41 @@
         const visRegex = /\s(\d{4})\s/;
         const visMatch = metar.match(visRegex);
         if (visMatch) {
-            data.vis = parseInt(visMatch[1]);
-            if (data.vis > 9999) data.vis = 9999;
+            data.visibility = parseInt(visMatch[1]);
+            if (data.visibility > 9999) data.visibility = 9999;
         } else {
             // Проверка на мили: "10SM"
             const smMatch = metar.match(/(\d+)SM/);
             if (smMatch) {
-                data.vis = parseInt(smMatch[1]) * 1609; // Мили в метры
+                data.visibility = parseInt(smMatch[1]) * 1609; // Мили в метры
             }
         }
 
-        // Осадки
-        if (/RA|SN|TS|DZ|GR|GS|PL/.test(metar)) {
+        // Осадки в METAR
+        let precipTypes = [];
+        if (/RA/.test(metar)) precipTypes.push("Дождь");
+        if (/SN/.test(metar)) precipTypes.push("Снег");
+        if (/DZ/.test(metar)) precipTypes.push("Морось");
+        if (/SG/.test(metar)) precipTypes.push("Снежные зерна");
+        if (/PL/.test(metar)) precipTypes.push("Ледяной дождь");
+        if (/GS/.test(metar)) precipTypes.push("Град");
+        
+        if (precipTypes.length > 0) {
+            data.precip = precipTypes.join(", ");
             data.rain = true;
+        }
+
+        // Давление: QNH или A
+        const pressureRegex = /(Q|A)(\d{4})/;
+        const pressureMatch = metar.match(pressureRegex);
+        if (pressureMatch) {
+            if (pressureMatch[1] === 'Q') {
+                // гПа (гектопаскали)
+                data.pressure = parseInt(pressureMatch[2]);
+            } else if (pressureMatch[1] === 'A') {
+                // дюймы ртутного столба
+                data.pressure = Math.round(parseInt(pressureMatch[2]) * 33.8639);
+            }
         }
 
         return data;
@@ -879,27 +1034,64 @@
         const drone = drones[document.getElementById('droneSelect').value];
         const d = current.parsed;
 
-        // Metrics
+        // ВЕТЕР (первый ряд)
         updateMetricBox('boxWind', 'valWind', d.wind.toFixed(1), 
             d.wind > drone.wind ? 'status-danger' : 'status-ok');
+        
         updateMetricBox('boxGust', 'valGust', d.gust.toFixed(1), 
             d.gust > drone.gust ? 'status-warn' : 'status-ok');
-        updateMetricBox('boxTemp', 'valTemp', d.temp + '°', 
+        
+        // Направление ветра
+        if (d.windDir !== null && d.windDir !== undefined) {
+            const cardinal = degreesToCardinal(d.windDir);
+            document.getElementById('valWindDirDeg').textContent = `${d.windDir}°`;
+            document.getElementById('valWindDirCard').textContent = cardinal;
+            updateMetricBoxStatus('boxWindDir', 'status-ok');
+        } else {
+            document.getElementById('valWindDirDeg').textContent = 'VAR';
+            document.getElementById('valWindDirCard').textContent = 'Переменный';
+            updateMetricBoxStatus('boxWindDir', 'status-warn');
+        }
+
+        // ТЕМПЕРАТУРА, ВЛАЖНОСТЬ, ВИДИМОСТЬ, ОСАДКИ (второй ряд)
+        updateMetricBox('boxTemp', 'valTemp', d.temp.toFixed(1) + '°', 
             (d.temp < drone.minTemp || d.temp > drone.maxTemp) ? 'status-danger' : 'status-ok');
         
-        // Видимость
-        let visDisplay = d.vis >= 9999 ? '>10km' : (d.vis >= 1000 ? (d.vis/1000).toFixed(1) + 'km' : d.vis + 'm');
+        // Влажность (только из OpenWeather)
+        if (d.humidity !== null && d.humidity !== undefined) {
+            updateMetricBox('boxHumidity', 'valHumidity', d.humidity + '%', 'status-ok');
+        } else {
+            updateMetricBox('boxHumidity', 'valHumidity', 'N/A', 'status-ok');
+        }
+        
+        // Видимость (исправляем undefined)
+        let visibility = d.visibility || d.vis || 10000;
+        let visDisplay;
+        
+        if (visibility >= 10000) {
+            visDisplay = '>10km';
+        } else if (visibility >= 1000) {
+            visDisplay = (visibility / 1000).toFixed(1) + 'km';
+        } else {
+            visDisplay = visibility + 'm';
+        }
+        
         updateMetricBox('boxVis', 'valVis', visDisplay, 
-            d.vis < 1000 ? 'status-warn' : 'status-ok');
+            visibility < 1000 ? 'status-warn' : 'status-ok');
+        
+        // Осадки
+        const precipText = d.precip || (d.rain ? "Есть" : "Нет");
+        updateMetricBox('boxPrecip', 'valPrecip', precipText, 
+            (d.rain && !drone.rain) ? 'status-danger' : 'status-ok');
 
         // Status Logic
         let issues = [];
         if (d.wind > drone.wind) issues.push(`Ветер (${d.wind.toFixed(1)} м/с) превышает лимит дрона (${drone.wind} м/с).`);
         if (d.gust > drone.gust) issues.push(`Порывы (${d.gust.toFixed(1)} м/с) превышают лимит дрона (${drone.gust} м/с).`);
         if (d.rain && !drone.rain) issues.push("Осадки. Дрон не влагозащищен.");
-        if (d.temp < drone.minTemp) issues.push(`Температура (${d.temp}°C) ниже минимальной (${drone.minTemp}°C).`);
-        if (d.temp > drone.maxTemp) issues.push(`Температура (${d.temp}°C) выше максимальной (${drone.maxTemp}°C).`);
-        if (d.vis < 1000) issues.push(`Видимость (${visDisplay}) ограничена.`);
+        if (d.temp < drone.minTemp) issues.push(`Температура (${d.temp.toFixed(1)}°C) ниже минимальной (${drone.minTemp}°C).`);
+        if (d.temp > drone.maxTemp) issues.push(`Температура (${d.temp.toFixed(1)}°C) выше максимальной (${drone.maxTemp}°C).`);
+        if (visibility < 1000) issues.push(`Видимость (${visDisplay}) ограничена.`);
 
         const badge = document.getElementById('statusBadge');
         const recList = document.getElementById('recList');
@@ -955,8 +1147,13 @@
         const box = document.getElementById(boxId);
         box.className = 'metric-box ' + statusClass;
     }
+    
+    function updateMetricBoxStatus(boxId, statusClass) {
+        const box = document.getElementById(boxId);
+        box.className = 'metric-box ' + statusClass;
+    }
 
-    /* ================= 8. CHART.JS ================= */
+    /* ================= 9. CHART.JS ================= */
     function drawChart(list, limit) {
         const ctx = document.getElementById('windChart').getContext('2d');
         
@@ -1024,7 +1221,7 @@
         });
     }
 
-    /* ================= 9. TOAST SYSTEM ================= */
+    /* ================= 10. TOAST SYSTEM ================= */
     function showToast(message, type = 'info') {
         const container = document.getElementById('toast-container');
         const toast = document.createElement('div');
