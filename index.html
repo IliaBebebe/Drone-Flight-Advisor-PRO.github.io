@@ -2,16 +2,16 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Drone Flight Advisor PRO</title>
-    
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="theme-color" content="#0f172a">
-
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- PWA мета-теги -->
+    <meta name="theme-color" content="#0f172a">
+    <link rel="manifest" href="manifest.json">
+    
     <style>
         :root {
             --bg-dark: #0f172a;
@@ -29,13 +29,13 @@
             --font-mono: 'JetBrains Mono', monospace;
         }
 
-        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
 
         body {
             background-color: var(--bg-dark);
             color: var(--text-main);
             font-family: var(--font-ui);
-            padding: 15px;
+            padding: 20px;
             min-height: 100vh;
         }
 
@@ -46,35 +46,14 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 20px;
+            margin-bottom: 25px;
             padding-bottom: 15px;
             border-bottom: 1px solid var(--border);
             flex-wrap: wrap;
             gap: 15px;
         }
-        .logo { font-size: 1.3rem; font-weight: 800; letter-spacing: -0.5px; }
+        .logo { font-size: 1.5rem; font-weight: 800; letter-spacing: -0.5px; }
         .logo span { color: var(--primary); }
-
-        .source-switch {
-            background: var(--bg-input);
-            padding: 4px;
-            border-radius: 8px;
-            display: flex;
-            gap: 5px;
-        }
-        .source-btn {
-            padding: 8px 12px;
-            border-radius: 6px;
-            font-size: 0.75rem;
-            cursor: pointer;
-            transition: 0.3s;
-            color: var(--text-muted);
-        }
-        .source-btn.active {
-            background: var(--primary);
-            color: white;
-            font-weight: 600;
-        }
 
         /* LAYOUT */
         .dashboard {
@@ -82,24 +61,93 @@
             grid-template-columns: 350px 1fr;
             gap: 20px;
         }
+        
+        /* Мобильная адаптация */
+        @media (max-width: 1024px) { 
+            .dashboard { grid-template-columns: 1fr; } 
+            header { flex-direction: column; align-items: flex-start; }
+            .logo { margin-bottom: 10px; }
+        }
+        
+        @media (max-width: 768px) {
+            body { padding: 10px; }
+            .panel { padding: 15px; }
+            .metrics-grid { grid-template-columns: repeat(2, 1fr); }
+        }
+        
+        @media (max-width: 480px) {
+            .metrics-grid { grid-template-columns: 1fr; }
+            .logo { font-size: 1.2rem; }
+        }
 
+        /* PANELS */
         .panel {
             background: var(--bg-panel);
             border: 1px solid var(--border);
             border-radius: 12px;
             padding: 20px;
-            margin-bottom: 15px;
+            margin-bottom: 20px;
             box-shadow: 0 4px 6px rgba(0,0,0,0.1);
         }
 
         h3 {
-            font-size: 0.8rem;
+            font-size: 0.85rem;
             text-transform: uppercase;
             color: var(--text-muted);
             margin-bottom: 15px;
             display: flex;
             align-items: center;
             gap: 8px;
+            letter-spacing: 0.5px;
+        }
+
+        /* Стили для раскрываемых блоков */
+        .collapse-header {
+            cursor: pointer;
+            user-select: none;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 15px;
+            background: rgba(0,0,0,0.1);
+            border-radius: 8px;
+            margin-bottom: 10px;
+            transition: background-color 0.2s;
+        }
+        
+        .collapse-header:hover {
+            background: rgba(0,0,0,0.2);
+        }
+        
+        .collapse-header h3 {
+            margin-bottom: 0;
+            flex-grow: 1;
+        }
+        
+        .collapse-icon {
+            transition: transform 0.3s ease;
+            color: var(--text-muted);
+        }
+        
+        .collapse-content {
+            overflow: hidden;
+            max-height: 0;
+            transition: max-height 0.3s ease, opacity 0.3s ease;
+            opacity: 0;
+        }
+        
+        .collapse-content.expanded {
+            max-height: 500px;
+            opacity: 1;
+        }
+        
+        /* Показываем блок с данными только когда раскрыт */
+        .raw-data-container {
+            display: none;
+        }
+        
+        .raw-data-container.expanded {
+            display: block;
         }
 
         /* FORMS */
@@ -112,10 +160,12 @@
             border: 1px solid var(--border);
             color: var(--text-main);
             padding: 12px;
-            border-radius: 8px;
+            border-radius: 6px;
             font-family: var(--font-mono);
-            font-size: 1rem;
+            font-size: 0.9rem;
+            transition: border-color 0.2s;
         }
+        input:focus, select:focus { outline: none; border-color: var(--primary); }
 
         /* AUTOCOMPLETE */
         .search-dropdown {
@@ -123,189 +173,292 @@
             background: var(--bg-panel);
             border: 1px solid var(--border);
             z-index: 100;
-            max-height: 250px;
+            max-height: 300px;
             overflow-y: auto;
-            border-radius: 8px;
+            border-radius: 6px;
             margin-top: 4px;
             display: none;
             box-shadow: 0 10px 25px rgba(0,0,0,0.5);
         }
         .search-item {
-            padding: 12px 15px;
+            padding: 10px 15px;
             cursor: pointer;
             border-bottom: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
         }
         .search-item:hover { background: var(--bg-input); }
-
-        /* LOADING ANIMATION */
-        #loader {
-            display: none;
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(15, 23, 42, 0.8);
-            backdrop-filter: blur(4px);
-            z-index: 9999;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            color: var(--primary);
-        }
-        .spinner {
-            width: 50px; height: 50px;
-            border: 5px solid rgba(59, 130, 246, 0.2);
-            border-top-color: var(--primary);
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-            margin-bottom: 15px;
-        }
-        @keyframes spin { to { transform: rotate(360deg); } }
+        .search-item strong { font-size: 0.9rem; color: var(--text-main); }
+        .search-item small { font-size: 0.75rem; color: var(--text-muted); margin-top: 2px; }
 
         /* BUTTONS */
         .btn {
-            width: 100%; padding: 16px;
+            width: 100%; padding: 14px;
             background: var(--primary);
             color: white; border: none; border-radius: 8px;
-            font-weight: 700; cursor: pointer;
+            font-weight: 600; cursor: pointer;
             text-transform: uppercase;
+            transition: 0.2s;
             display: flex; justify-content: center; align-items: center; gap: 8px;
         }
+        .btn:hover { background: #2563eb; }
+        .btn:active { transform: scale(0.98); }
 
-        /* METRICS */
+        /* METRICS GRID */
         .metrics-grid {
             display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 12px;
-            margin-bottom: 15px;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
         }
         .metric-box {
             background: rgba(255,255,255,0.02);
             padding: 15px;
-            border-radius: 10px;
+            border-radius: 8px;
             text-align: center;
-            border: 1px solid var(--border);
+            border: 1px solid transparent;
         }
-        .metric-val { font-size: 1.4rem; font-weight: 700; font-family: var(--font-mono); }
-        
-        .status-ok { border-color: var(--success); }
-        .status-warn { border-color: var(--warning); }
-        .status-danger { border-color: var(--danger); }
+        .metric-val { font-size: 1.4rem; font-weight: 700; font-family: var(--font-mono); color: var(--text-main); }
+        .metric-lbl { font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; margin-top: 5px; }
 
+        .status-ok { border-color: var(--success); background: rgba(16, 185, 129, 0.05); }
+        .status-warn { border-color: var(--warning); background: rgba(245, 158, 11, 0.05); }
+        .status-danger { border-color: var(--danger); background: rgba(239, 68, 68, 0.05); }
+
+        /* RAW DATA BOX */
         .raw-data {
             background: #000;
             color: #33ff00;
             font-family: var(--font-mono);
-            padding: 12px;
+            padding: 15px;
             border-radius: 6px;
-            font-size: 0.75rem;
-            white-space: pre-wrap;
+            font-size: 0.8rem;
+            line-height: 1.4;
+            margin-bottom: 15px;
             border-left: 3px solid var(--primary);
+            overflow-x: auto;
+            white-space: pre-wrap;
+            word-break: break-all;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .raw-data-container { margin-bottom: 20px; }
+
+        /* STATUS BADGE */
+        .flight-status {
+            text-align: center;
+            padding: 20px;
+            background: rgba(255,255,255,0.02);
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        .badge {
+            display: inline-block;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-weight: 700;
+            font-size: 1.2rem;
+            margin-bottom: 5px;
         }
 
-        /* MOBILE ADAPTATION */
-        @media (max-width: 1024px) {
-            .dashboard { grid-template-columns: 1fr; }
-            .metrics-grid { grid-template-columns: repeat(2, 1fr); }
+        /* LOADING ANIMATION */
+        .loader {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid var(--border);
+            border-top: 4px solid var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
         }
 
+        /* TOAST NOTIFICATION */
         #toast-container {
-            position: fixed; bottom: 20px; left: 50%;
-            transform: translateX(-50%); z-index: 10000;
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
         }
         .toast {
-            background: var(--bg-panel); padding: 12px 20px;
-            border-radius: 8px; margin-top: 10px; border: 1px solid var(--border);
-            box-shadow: 0 5px 15px rgba(0,0,0,0.3); font-size: 0.9rem;
+            background: var(--bg-panel);
+            color: var(--text-main);
+            padding: 12px 24px;
+            border-radius: 8px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            border: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            animation: slideUp 0.3s ease-out;
+            min-width: 300px;
         }
+        .toast.error { border-left: 4px solid var(--danger); }
+        .toast.success { border-left: 4px solid var(--success); }
+        .toast.info { border-left: 4px solid var(--primary); }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* CHART CONTAINER */
+        .chart-wrapper {
+            height: 250px;
+            width: 100%;
+        }
+
+        /* CONFIG GRID */
+        .config-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        @media (max-width: 768px) {
+            .config-grid { grid-template-columns: 1fr; }
+        }
+
     </style>
 </head>
 <body>
 
-<div id="loader">
-    <div class="spinner"></div>
-    <div style="font-weight: 600; letter-spacing: 1px;">ПОЛУЧЕНИЕ ДАННЫХ...</div>
-</div>
-
 <div class="container">
     <header>
-        <div class="logo"><i class="fas fa-shield-halved"></i> FLIGHT<span>ADVISOR PRO</span></div>
-        <div class="source-switch">
-            <div class="source-btn active" id="btnMetar" onclick="switchMode('metar')">METAR</div>
-            <div class="source-btn" id="btnWeather" onclick="switchMode('weather')">OpenWeather</div>
+        <div class="logo"><i class="fas fa-crosshairs"></i> DRONE<span>FLIGHT ADVISOR PRO</span></div>
+        <div style="font-size: 0.8rem; color: var(--text-muted);">
+            <i class="fas fa-satellite"></i> Режим: <span id="modeIndicator">METAR (приоритет)</span>
         </div>
     </header>
 
     <div class="dashboard">
         <aside>
-            <div class="panel">
-                <h3><i class="fas fa-drone"></i> Выбор дрона</h3>
-                <div class="form-group">
-                    <select id="droneSelect"></select>
-                    <div id="droneSpecs" style="margin-top:10px; font-size:0.75rem; color:var(--text-muted); line-height:1.4;"></div>
+            <div class="config-grid">
+                <div class="panel">
+                    <h3><i class="fas fa-drone"></i> Выбор дрона</h3>
+                    <div class="form-group">
+                        <label>Модель дрона</label>
+                        <select id="droneSelect"></select>
+                        <div id="droneSpecs" style="margin-top:5px; font-size:0.75rem; color:var(--text-muted);"></div>
+                    </div>
+                </div>
+
+                <div class="panel">
+                    <h3><i class="fas fa-map-marker-alt"></i> Выбор локации</h3>
+                    <div class="form-group">
+                        <label>Аэропорт (ICAO / Город)</label>
+                        <div style="position: relative;">
+                            <input type="text" id="searchInput" placeholder="Начните вводить (напр. Moscow)..." autocomplete="off">
+                            <i class="fas fa-search" style="position: absolute; right: 10px; top: 12px; color: var(--text-muted);"></i>
+                        </div>
+                        <div id="searchResults" class="search-dropdown"></div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>API Key (OpenWeatherMap)</label>
+                        <input type="password" id="apiKey" value="f3843336b2145e67e0c0614fb8585cc1">
+                        <small style="color: var(--text-muted); font-size: 0.7rem;">Требуется для прогноза</small>
+                    </div>
                 </div>
             </div>
 
             <div class="panel">
-                <h3><i class="fas fa-map-location-dot"></i> Выбор локации</h3>
-                <div class="form-group">
-                    <label>Аэропорт (ICAO / Город)</label>
-                    <input type="text" id="searchInput" placeholder="Поиск в airports.dat..." autocomplete="off">
-                    <div id="searchResults" class="search-dropdown"></div>
-                </div>
-                <div class="form-group">
-                    <label>API Key (OpenWeatherMap)</label>
-                    <input type="password" id="apiKey" value="f3843336b2145e67e0c0614fb8585cc1">
-                </div>
                 <button class="btn" onclick="runAnalysis()">
                     <i class="fas fa-satellite-dish"></i> Анализ условий
                 </button>
+            </div>
+
+            <!-- Loading Animation -->
+            <div id="loadingIndicator" class="loader" style="display: none;">
+                <div class="spinner"></div>
+                <p style="color: var(--text-muted); font-size: 0.9rem;">Загрузка данных...</p>
             </div>
         </aside>
 
         <main>
             <div id="resultsPanel" style="display:none;">
-                <div style="text-align: center; margin-bottom: 20px;">
-                    <div id="statusBadge" style="display: inline-block; padding: 8px 25px; border-radius: 30px; font-weight: 800; font-size: 1.1rem;">--</div>
-                    <div id="locationDisplay" style="margin-top:10px; font-size:1rem; color:var(--text-muted);"></div>
+                
+                <div class="flight-status">
+                    <div id="statusBadge" class="badge">CALCULATING...</div>
+                    <div id="locationDisplay" style="margin-top:5px; font-size:1.1rem; color:var(--text-main);"></div>
+                </div>
+
+                <!-- Raw Data from both sources (collapsible) -->
+                <div class="raw-data-container">
+                    <!-- METAR data (collapsible) -->
+                    <div class="panel">
+                        <div class="collapse-header" onclick="toggleCollapse('metarCollapse', this)">
+                            <h3><i class="fas fa-terminal"></i> Исходные данные METAR</h3>
+                            <i class="fas fa-chevron-down collapse-icon" id="metarCollapseIcon"></i>
+                        </div>
+                        <div class="collapse-content" id="metarCollapse">
+                            <div class="raw-data" id="rawMetar">Нажмите "Анализ условий" для загрузки данных...</div>
+                        </div>
+                    </div>
+                    
+                    <!-- OpenWeather data (collapsible) -->
+                    <div class="panel">
+                        <div class="collapse-header" onclick="toggleCollapse('owCollapse', this)">
+                            <h3><i class="fas fa-terminal"></i> Исходные данные OpenWeather</h3>
+                            <i class="fas fa-chevron-down collapse-icon" id="owCollapseIcon"></i>
+                        </div>
+                        <div class="collapse-content" id="owCollapse">
+                            <div class="raw-data" id="rawOpenWeather">Нажмите "Анализ условий" для загрузки данных...</div>
+                        </div>
+                    </div>
                 </div>
 
                 <div class="metrics-grid">
                     <div class="metric-box" id="boxWind">
                         <div class="metric-val" id="valWind">--</div>
-                        <div style="font-size: 0.65rem; color: var(--text-muted); text-transform: uppercase;">Ветер (м/с)</div>
+                        <div class="metric-lbl">Ветер (м/с)</div>
                     </div>
                     <div class="metric-box" id="boxGust">
                         <div class="metric-val" id="valGust">--</div>
-                        <div style="font-size: 0.65rem; color: var(--text-muted); text-transform: uppercase;">Порывы</div>
+                        <div class="metric-lbl">Порывы (м/с)</div>
                     </div>
                     <div class="metric-box" id="boxTemp">
                         <div class="metric-val" id="valTemp">--</div>
-                        <div style="font-size: 0.65rem; color: var(--text-muted); text-transform: uppercase;">Температура</div>
+                        <div class="metric-lbl">Температура</div>
                     </div>
                     <div class="metric-box" id="boxVis">
                         <div class="metric-val" id="valVis">--</div>
-                        <div style="font-size: 0.65rem; color: var(--text-muted); text-transform: uppercase;">Видимость</div>
+                        <div class="metric-lbl">Видимость</div>
                     </div>
                 </div>
 
                 <div class="panel">
-                    <h3><i class="fas fa-chart-line"></i> Прогноз на 24ч</h3>
-                    <div style="height: 220px;"><canvas id="windChart"></canvas></div>
+                    <h3><i class="fas fa-chart-area"></i> График прогноза ветра (24ч)</h3>
+                    <div class="chart-wrapper">
+                        <canvas id="windChart"></canvas>
+                    </div>
+                    <div style="font-size: 0.7rem; color: var(--text-muted); margin-top: 10px; text-align: center;">
+                        * Прогноз берется из OpenWeather Forecast API
+                    </div>
                 </div>
 
                 <div class="panel">
                     <h3><i class="fas fa-clipboard-check"></i> Рекомендации</h3>
-                    <ul id="recList" style="padding-left: 20px; font-size: 0.9rem; line-height: 1.6;"></ul>
+                    <ul id="recList" style="padding-left: 20px; font-size: 0.9rem; line-height: 1.6; color: var(--text-main);"></ul>
                 </div>
 
-                <div class="panel">
-                    <h3><i class="fas fa-terminal"></i> Данные источника</h3>
-                    <div class="raw-data" id="rawString">...</div>
-                </div>
             </div>
 
-            <div id="emptyState" style="text-align: center; margin-top: 100px; opacity: 0.2;">
-                <i class="fas fa-plane-up" style="font-size: 5rem;"></i>
-                <p style="margin-top: 20px;">Готов к проверке условий</p>
+            <div id="emptyState" style="text-align: center; margin-top: 80px; opacity: 0.3;">
+                <i class="fas fa-plane-departure" style="font-size: 5rem;"></i>
+                <p style="margin-top: 20px;">Выберите дрон и локацию для начала</p>
             </div>
         </main>
     </div>
@@ -316,44 +469,127 @@
 <script>
     /* ================= 1. DATABASE LOADING ================= */
     let airportDB = [];
+    let isAirportsLoaded = false;
+
+    async function loadAirportsData() {
+        try {
+            showToast("Загрузка базы аэропортов...", "info");
+            
+            // Пытаемся загрузить из файла airports.dat
+            const response = await fetch('airports.dat');
+            
+            if (!response.ok) {
+                throw new Error(`Ошибка загрузки файла: ${response.status}`);
+            }
+            
+            const text = await response.text();
+            
+            // Парсим CSV-подобный файл
+            const lines = text.split('\n').filter(line => line.trim().length > 0);
+            
+            airportDB = lines.map(line => {
+                // Убираем кавычки и разделяем запятыми
+                const parts = line.split(',').map(part => {
+                    // Убираем кавычки если есть
+                    let cleaned = part.trim();
+                    if (cleaned.startsWith('"') && cleaned.endsWith('"')) {
+                        cleaned = cleaned.substring(1, cleaned.length - 1);
+                    }
+                    return cleaned;
+                });
+                
+                // Формат airports.dat (OpenFlights):
+                // 0: Airport ID, 1: Name, 2: City, 3: Country, 4: IATA, 5: ICAO, 6: Lat, 7: Lon
+                if (parts.length >= 8 && parts[5] && parts[5].trim().length === 4) {
+                    return {
+                        id: parts[0],
+                        name: parts[1],
+                        city: parts[2],
+                        country: parts[3],
+                        iata: parts[4],
+                        icao: parts[5],
+                        lat: parseFloat(parts[6]),
+                        lon: parseFloat(parts[7])
+                    };
+                }
+                return null;
+            }).filter(airport => airport !== null);
+            
+            isAirportsLoaded = true;
+            showToast(`Загружено ${airportDB.length} аэропортов`, "success");
+            
+        } catch (error) {
+            console.error("Ошибка загрузки airports.dat:", error);
+            
+            // Запасной вариант - встроенные данные
+            airportDB = getFallbackAirports();
+            isAirportsLoaded = true;
+            showToast("Используется встроенная база аэропортов", "warning");
+        }
+    }
+
+    function getFallbackAirports() {
+        // Резервная база данных (основные аэропорты)
+        return [
+            {id: "2985", name: "Sheremetyevo International Airport", city: "Moscow", country: "Russia", iata: "SVO", icao: "UUEE", lat: 55.972599, lon: 37.4146},
+            {id: "4029", name: "Domodedovo International Airport", city: "Moscow", country: "Russia", iata: "DME", icao: "UUDD", lat: 55.408798, lon: 37.9063},
+            {id: "2988", name: "Vnukovo International Airport", city: "Moscow", country: "Russia", iata: "VKO", icao: "UUWW", lat: 55.591499, lon: 37.261501},
+            {id: "2948", name: "Pulkovo Airport", city: "St. Petersburg", country: "Russia", iata: "LED", icao: "ULLI", lat: 59.800301, lon: 30.2625},
+            {id: "507", name: "Heathrow Airport", city: "London", country: "United Kingdom", iata: "LHR", icao: "EGLL", lat: 51.4706, lon: -0.461941},
+            {id: "3797", name: "John F Kennedy International Airport", city: "New York", country: "United States", iata: "JFK", icao: "KJFK", lat: 40.639801, lon: -73.7789},
+            {id: "2188", name: "Dubai International Airport", city: "Dubai", country: "United Arab Emirates", iata: "DXB", icao: "OMDB", lat: 25.2528, lon: 55.364399}
+        ];
+    }
+
     const drones = [
         { name: "DJI Mini 4 Pro", wind: 10.7, gust: 13, rain: false, minTemp: -10, maxTemp: 40 },
         { name: "DJI Mavic 3 Pro", wind: 12.0, gust: 15, rain: false, minTemp: -10, maxTemp: 40 },
-        { name: "DJI Matrice 350", wind: 15.0, gust: 20, rain: true, minTemp: -20, maxTemp: 50 },
+        { name: "DJI Matrice 30T", wind: 15.0, gust: 20, rain: true, minTemp: -20, maxTemp: 50 },
+        { name: "DJI Matrice 350", wind: 12.0, gust: 18, rain: true, minTemp: -20, maxTemp: 50 },
+        { name: "Autel EVO II V3", wind: 12.0, gust: 17, rain: false, minTemp: -10, maxTemp: 40 },
         { name: "FPV Custom 5\"", wind: 15.0, gust: 25, rain: false, minTemp: -5, maxTemp: 40 }
     ];
 
-    async function initApp() {
-        try {
-            const res = await fetch('airports.dat');
-            if (!res.ok) throw new Error();
-            const text = await res.text();
-            
-            airportDB = text.split('\n')
-                .filter(line => line.trim().length > 0)
-                .map(line => {
-                    const c = line.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/);
-                    return {
-                        name: c[1]?.replace(/"/g, ''),
-                        city: c[2]?.replace(/"/g, ''),
-                        country: c[3]?.replace(/"/g, ''),
-                        icao: c[5]?.replace(/"/g, ''),
-                        lat: parseFloat(c[6]),
-                        lon: parseFloat(c[7])
-                    };
-                }).filter(a => a.icao && a.icao !== '\\N');
-            console.log("Airports loaded:", airportDB.length);
-        } catch (e) {
-            showToast("Файл airports.dat не найден!", "error");
-        }
+    /* ================= 2. STATE & INIT ================= */
+    let selectedAirport = null;
+    let chartInstance = null;
+    let searchTimeout = null;
+    let currentData = null;
+    let forecastData = null;
+
+    document.addEventListener('DOMContentLoaded', async () => {
+        // Загружаем базу аэропортов
+        await loadAirportsData();
+        
         initDrones();
-    }
+        document.getElementById('searchInput').addEventListener('input', handleSearch);
+        
+        // Клик вне поиска закрывает дропдаун
+        document.addEventListener('click', (e) => {
+            if(!e.target.closest('.form-group')) document.getElementById('searchResults').style.display = 'none';
+        });
+        
+        // PWA установка
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('service-worker.js').then(
+                    (registration) => {
+                        console.log('ServiceWorker зарегистрирован:', registration.scope);
+                    },
+                    (err) => {
+                        console.log('Ошибка регистрации ServiceWorker:', err);
+                    }
+                );
+            });
+        }
+    });
 
     function initDrones() {
         const sel = document.getElementById('droneSelect');
         drones.forEach((d, i) => {
             const opt = document.createElement('option');
-            opt.value = i; opt.textContent = d.name;
+            opt.value = i;
+            opt.textContent = d.name;
             sel.appendChild(opt);
         });
         sel.addEventListener('change', updateDroneSpecs);
@@ -363,187 +599,451 @@
     function updateDroneSpecs() {
         const d = drones[document.getElementById('droneSelect').value];
         document.getElementById('droneSpecs').innerHTML = 
-            `Max Wind: <b>${d.wind} m/s</b> | Gust: <b>${d.gust} m/s</b><br>Rain safe: <b>${d.rain ? 'YES' : 'NO'}</b> | Temp: ${d.minTemp}° to ${d.maxTemp}°`;
+            `Max Wind: <b>${d.wind} m/s</b> | Rain: <b>${d.rain ? 'YES' : 'NO'}</b> | Temp: ${d.minTemp}° to ${d.maxTemp}°`;
     }
 
-    /* ================= 2. SEARCH & MODE ================= */
-    let mode = 'metar';
-    let selectedAirport = null;
-    let chartInstance = null;
-
-    function switchMode(m) {
-        mode = m;
-        document.getElementById('btnMetar').className = `source-btn ${mode === 'metar' ? 'active' : ''}`;
-        document.getElementById('btnWeather').className = `source-btn ${mode === 'weather' ? 'active' : ''}`;
+    /* ================= 3. COLLAPSE TOGGLE FUNCTION ================= */
+    function toggleCollapse(collapseId, headerElement) {
+        const content = document.getElementById(collapseId);
+        const icon = headerElement.querySelector('.collapse-icon');
+        
+        if (content.classList.contains('expanded')) {
+            content.classList.remove('expanded');
+            icon.style.transform = 'rotate(0deg)';
+        } else {
+            content.classList.add('expanded');
+            icon.style.transform = 'rotate(180deg)';
+        }
     }
 
-    document.getElementById('searchInput').addEventListener('input', (e) => {
+    /* ================= 4. SEARCH LOGIC ================= */
+    function handleSearch(e) {
+        if (!isAirportsLoaded) {
+            showToast("База аэропортов еще загружается...", "warning");
+            return;
+        }
+        
+        clearTimeout(searchTimeout);
         const query = e.target.value.toLowerCase();
         const resultsDiv = document.getElementById('searchResults');
-        if (query.length < 2) { resultsDiv.style.display = 'none'; return; }
-
-        const matches = airportDB.filter(a => 
-            a.city.toLowerCase().includes(query) || a.icao.toLowerCase().includes(query)
-        ).slice(0, 8);
-
-        resultsDiv.innerHTML = '';
-        if (matches.length > 0) {
-            resultsDiv.style.display = 'block';
-            matches.forEach(a => {
-                const div = document.createElement('div');
-                div.className = 'search-item';
-                div.innerHTML = `<strong>${a.city}</strong> (${a.icao})<br><small>${a.name}</small>`;
-                div.onclick = () => {
-                    selectedAirport = a;
-                    document.getElementById('searchInput').value = `${a.city} (${a.icao})`;
-                    resultsDiv.style.display = 'none';
-                };
-                resultsDiv.appendChild(div);
-            });
+        
+        if (query.length < 2) {
+            resultsDiv.style.display = 'none';
+            return;
         }
-    });
 
-    /* ================= 3. CORE LOGIC ================= */
+        searchTimeout = setTimeout(() => {
+            const matches = airportDB.filter(a => 
+                a.city.toLowerCase().includes(query) || 
+                a.name.toLowerCase().includes(query) || 
+                (a.icao && a.icao.toLowerCase().includes(query)) ||
+                (a.iata && a.iata.toLowerCase().includes(query))
+            ).slice(0, 20); // Ограничиваем 20 результатами
+
+            resultsDiv.innerHTML = '';
+            if (matches.length > 0) {
+                resultsDiv.style.display = 'block';
+                matches.forEach(a => {
+                    const div = document.createElement('div');
+                    div.className = 'search-item';
+                    div.innerHTML = `
+                        <strong>${a.city}, ${a.country} (${a.icao || 'N/A'}/${a.iata || 'N/A'})</strong>
+                        <small>${a.name}</small>
+                    `;
+                    div.onclick = () => selectAirport(a);
+                    resultsDiv.appendChild(div);
+                });
+            } else {
+                resultsDiv.style.display = 'none';
+            }
+        }, 300);
+    }
+
+    function selectAirport(airport) {
+        selectedAirport = airport;
+        document.getElementById('searchInput').value = `${airport.city} (${airport.icao || airport.iata || 'N/A'})`;
+        document.getElementById('searchResults').style.display = 'none';
+    }
+
+    /* ================= 5. MAIN LOGIC ================= */
     async function runAnalysis() {
-        if (!selectedAirport) { showToast("Выберите локацию!", "error"); return; }
-        const apiKey = document.getElementById('apiKey').value;
-        if (!apiKey) { showToast("Введите API Key!", "error"); return; }
+        if (!selectedAirport) {
+            showToast("Сначала выберите аэропорт из списка!", "error");
+            return;
+        }
 
-        // Показываем анимацию загрузки
-        document.getElementById('loader').style.display = 'flex';
+        const apiKey = document.getElementById('apiKey').value;
+        if (!apiKey) {
+            showToast("Введите API Key для прогноза!", "warning");
+        }
+
+        // Показать загрузку
+        document.getElementById('loadingIndicator').style.display = 'block';
+        document.getElementById('emptyState').style.display = 'none';
+        document.getElementById('resultsPanel').style.display = 'block';
+        document.getElementById('statusBadge').textContent = "LOADING...";
+        document.getElementById('statusBadge').style.background = "#555";
+
+        // Показать контейнер с данными
+        document.querySelector('.raw-data-container').style.display = 'block';
+
+        document.getElementById('locationDisplay').innerHTML = `<i class="fas fa-map-marker-alt"></i> ${selectedAirport.city}, ${selectedAirport.name}`;
 
         try {
-            let currentData;
-            if (mode === 'metar') {
-                currentData = await fetchMetar(selectedAirport.icao);
-            } else {
-                currentData = await fetchOWMCurrent(selectedAirport.lat, selectedAirport.lon, apiKey);
-            }
-            const forecastData = await fetchOWMForecast(selectedAirport.lat, selectedAirport.lon, apiKey);
+            // 1. Получаем данные из обоих источников
+            const [metarResult, owmResult] = await Promise.allSettled([
+                fetchMetar(selectedAirport.icao),
+                fetchOWMCurrent(selectedAirport.lat, selectedAirport.lon, apiKey)
+            ]);
 
-            updateDashboard(currentData, forecastData);
-            document.getElementById('emptyState').style.display = 'none';
-            document.getElementById('resultsPanel').style.display = 'block';
-        } catch (err) {
-            showToast(err.message, "error");
+            // 2. Всегда получаем ПРОГНОЗ для графика (из OWM если есть ключ)
+            if (apiKey) {
+                forecastData = await fetchOWMForecast(selectedAirport.lat, selectedAirport.lon, apiKey);
+            } else {
+                forecastData = null;
+                showToast("API ключ отсутствует - график прогноза не будет построен", "warning");
+            }
+
+            // 3. Определяем приоритетный источник данных для анализа
+            let primaryData = null;
+            let dataSource = "OpenWeather";
+            
+            if (metarResult.status === 'fulfilled') {
+                primaryData = metarResult.value;
+                dataSource = "METAR";
+                document.getElementById('modeIndicator').textContent = "METAR (актуальные данные)";
+            } else if (owmResult.status === 'fulfilled') {
+                primaryData = owmResult.value;
+                dataSource = "OpenWeather";
+                document.getElementById('modeIndicator').textContent = "OpenWeather (резервный источник)";
+            } else {
+                throw new Error("Нет доступных источников данных");
+            }
+
+            // 4. Отображаем данные из обоих источников
+            if (metarResult.status === 'fulfilled') {
+                document.getElementById('rawMetar').textContent = metarResult.value.raw;
+            } else {
+                document.getElementById('rawMetar').textContent = "METAR недоступен: " + (metarResult.reason?.message || "Unknown error");
+            }
+
+            if (owmResult.status === 'fulfilled') {
+                document.getElementById('rawOpenWeather').textContent = owmResult.value.raw;
+            } else {
+                document.getElementById('rawOpenWeather').textContent = "OpenWeather недоступен: " + (owmResult.reason?.message || "Unknown error");
+            }
+
+            // 5. Обновляем дашборд на основе приоритетных данных
+            updateDashboard(primaryData, forecastData, dataSource);
+            showToast(`Данные обновлены (источник: ${dataSource})`, "success");
+
+        } catch (error) {
+            console.error(error);
+            showToast(error.message, "error");
+            document.getElementById('rawMetar').textContent = "ERROR: " + error.message;
         } finally {
-            // Скрываем анимацию загрузки через небольшую паузу для плавности
-            setTimeout(() => {
-                document.getElementById('loader').style.display = 'none';
-            }, 500);
+            // Скрыть индикатор загрузки
+            document.getElementById('loadingIndicator').style.display = 'none';
         }
     }
 
-    /* FETCHERS */
+    /* ================= 6. DATA FETCHERS ================= */
     async function fetchMetar(icao) {
-        const res = await fetch(`https://metar.vatsim.net/metar.php?id=${icao}`);
-        const text = await res.text();
-        if (!text || text.includes("not found")) throw new Error("METAR не найден");
-        return { source: 'METAR', raw: text, parsed: parseMetar(text) };
+        if (!icao || icao.length !== 4) {
+            throw new Error("Неверный код ICAO");
+        }
+        
+        // VATSIM METAR source (без CORS проблем)
+        const response = await fetch(`https://metar.vatsim.net/metar.php?id=${icao}`);
+        if (!response.ok) throw new Error("Ошибка доступа к METAR");
+        
+        const text = await response.text();
+        if (!text || text.includes("No METAR available") || text.trim().length < 10) {
+            throw new Error("METAR недоступен для этого аэропорта");
+        }
+        
+        return {
+            source: 'METAR (VATSIM)',
+            raw: text.trim(),
+            parsed: parseMetar(text)
+        };
     }
 
     async function fetchOWMCurrent(lat, lon, key) {
+        if (!key) {
+            throw new Error("API ключ не указан");
+        }
+        
         const res = await fetch(`https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&units=metric&appid=${key}`);
-        if (!res.ok) throw new Error("OWM API Error");
+        if (!res.ok) {
+            const errorText = await res.text();
+            throw new Error(`OpenWeather API: ${res.status} - ${errorText}`);
+        }
+        
         const data = await res.json();
+        
         return {
-            source: 'OpenWeather',
-            raw: `JSON Response: Temp=${data.main.temp}, Wind=${data.wind.speed}`,
-            parsed: { wind: data.wind.speed, gust: data.wind.gust || data.wind.speed, temp: data.main.temp, vis: data.visibility, rain: (data.weather[0].main === 'Rain') }
+            source: 'OpenWeather Current',
+            raw: JSON.stringify(data, null, 2),
+            parsed: {
+                wind: data.wind.speed,
+                gust: data.wind.gust || data.wind.speed, // Если порывов нет, используем скорость ветра
+                temp: data.main.temp,
+                vis: data.visibility,
+                rain: data.weather.some(w => 
+                    w.main === 'Rain' || w.main === 'Snow' || w.main === 'Drizzle'
+                )
+            }
         };
     }
 
     async function fetchOWMForecast(lat, lon, key) {
+        if (!key) {
+            throw new Error("API ключ не указан");
+        }
+        
         const res = await fetch(`https://api.openweathermap.org/data/2.5/forecast?lat=${lat}&lon=${lon}&units=metric&appid=${key}`);
+        if (!res.ok) throw new Error("Ошибка получения прогноза");
         return await res.json();
     }
 
+    /* ================= 7. PARSERS & UI ================= */
     function parseMetar(metar) {
-        const data = { wind: 0, gust: 0, temp: 0, vis: 9999, rain: false };
-        const wind = metar.match(/(\d{3}|VRB)(\d{2})(G(\d{2}))?(KT|MPS)/);
-        if (wind) {
-            let v = parseInt(wind[2]);
-            let g = wind[4] ? parseInt(wind[4]) : v;
-            if (wind[5] === 'KT') { v *= 0.514; g *= 0.514; }
-            data.wind = v; data.gust = g;
+        const data = { 
+            wind: 0, 
+            gust: 0, 
+            temp: 20, 
+            vis: 9999, 
+            rain: false 
+        };
+
+        // Ветер: форматы "12010KT", "12010G20KT", "VRB05MPS"
+        // Более точный парсинг
+        const windRegex = /(\d{3}|VRB)(\d{2,3})(G(\d{2,3}))?(KT|MPS|KMH)/;
+        const windMatch = metar.match(windRegex);
+        
+        if (windMatch) {
+            let speed = parseInt(windMatch[2]);
+            let gust = windMatch[4] ? parseInt(windMatch[4]) : speed;
+            
+            // Конвертация единиц
+            if (windMatch[5] === 'KT') {
+                // Узлы в м/с: 1 узел = 0.514444 м/с
+                speed *= 0.514;
+                gust *= 0.514;
+            } else if (windMatch[5] === 'KMH') {
+                // км/ч в м/с
+                speed *= 0.277778;
+                gust *= 0.277778;
+            }
+            // MPS уже в м/с
+            
+            data.wind = Math.round(speed * 10) / 10;
+            data.gust = Math.round(gust * 10) / 10;
         }
-        const temp = metar.match(/(M?\d{2})\/(M?\d{2})/);
-        if (temp) data.temp = parseInt(temp[1].replace('M', '-'));
-        const vis = metar.match(/\s(\d{4})\s/);
-        if (vis) data.vis = parseInt(vis[1]);
-        if (/RA|SN|TS|DZ/.test(metar)) data.rain = true;
+
+        // Температура: форматы "M05/M10", "05/M10", "20/15"
+        const tempRegex = /\s(M?\d{2})\/(M?\d{2})\s/;
+        const tempMatch = metar.match(tempRegex);
+        if (tempMatch) {
+            let tempStr = tempMatch[1];
+            data.temp = parseInt(tempStr.replace('M', '-'));
+        }
+
+        // Видимость: "9999", "4000", "10SM", "1 1/2SM"
+        const visRegex = /\s(\d{4})\s/;
+        const visMatch = metar.match(visRegex);
+        if (visMatch) {
+            data.vis = parseInt(visMatch[1]);
+            if (data.vis > 9999) data.vis = 9999;
+        } else {
+            // Проверка на мили: "10SM"
+            const smMatch = metar.match(/(\d+)SM/);
+            if (smMatch) {
+                data.vis = parseInt(smMatch[1]) * 1609; // Мили в метры
+            }
+        }
+
+        // Осадки
+        if (/RA|SN|TS|DZ|GR|GS|PL/.test(metar)) {
+            data.rain = true;
+        }
+
         return data;
     }
 
-    function updateDashboard(current, forecast) {
+    function updateDashboard(current, forecast, source) {
         const drone = drones[document.getElementById('droneSelect').value];
         const d = current.parsed;
 
-        document.getElementById('rawString').textContent = current.raw;
-        document.getElementById('locationDisplay').innerHTML = `<i class="fas fa-location-dot"></i> ${selectedAirport.city} — ${selectedAirport.name}`;
+        // Metrics
+        updateMetricBox('boxWind', 'valWind', d.wind.toFixed(1), 
+            d.wind > drone.wind ? 'status-danger' : 'status-ok');
+        updateMetricBox('boxGust', 'valGust', d.gust.toFixed(1), 
+            d.gust > drone.gust ? 'status-warn' : 'status-ok');
+        updateMetricBox('boxTemp', 'valTemp', d.temp + '°', 
+            (d.temp < drone.minTemp || d.temp > drone.maxTemp) ? 'status-danger' : 'status-ok');
+        
+        // Видимость
+        let visDisplay = d.vis >= 9999 ? '>10km' : (d.vis >= 1000 ? (d.vis/1000).toFixed(1) + 'km' : d.vis + 'm');
+        updateMetricBox('boxVis', 'valVis', visDisplay, 
+            d.vis < 1000 ? 'status-warn' : 'status-ok');
 
-        updateMetric('boxWind', 'valWind', d.wind.toFixed(1), d.wind > drone.wind ? 'status-danger' : 'status-ok');
-        updateMetric('boxGust', 'valGust', d.gust.toFixed(1), d.gust > drone.gust ? 'status-warn' : 'status-ok');
-        updateMetric('boxTemp', 'valTemp', d.temp + '°', (d.temp < drone.minTemp || d.temp > drone.maxTemp) ? 'status-danger' : 'status-ok');
-        updateMetric('boxVis', 'valVis', d.vis >= 9999 ? '>10km' : d.vis + 'm', d.vis < 1500 ? 'status-warn' : 'status-ok');
+        // Status Logic
+        let issues = [];
+        if (d.wind > drone.wind) issues.push(`Ветер (${d.wind.toFixed(1)} м/с) превышает лимит дрона (${drone.wind} м/с).`);
+        if (d.gust > drone.gust) issues.push(`Порывы (${d.gust.toFixed(1)} м/с) превышают лимит дрона (${drone.gust} м/с).`);
+        if (d.rain && !drone.rain) issues.push("Осадки. Дрон не влагозащищен.");
+        if (d.temp < drone.minTemp) issues.push(`Температура (${d.temp}°C) ниже минимальной (${drone.minTemp}°C).`);
+        if (d.temp > drone.maxTemp) issues.push(`Температура (${d.temp}°C) выше максимальной (${drone.maxTemp}°C).`);
+        if (d.vis < 1000) issues.push(`Видимость (${visDisplay}) ограничена.`);
 
         const badge = document.getElementById('statusBadge');
-        const list = document.getElementById('recList');
-        list.innerHTML = '';
-        let errors = [];
+        const recList = document.getElementById('recList');
+        recList.innerHTML = '';
 
-        if (d.wind > drone.wind) errors.push("Критическая скорость ветра.");
-        if (d.gust > drone.gust) errors.push("Опасные порывы ветра.");
-        if (d.rain && !drone.rain) errors.push("Осадки: дрон не защищен.");
-        if (d.temp < drone.minTemp) errors.push("Слишком низкая температура.");
-
-        if (errors.length === 0) {
-            badge.textContent = "РАЗРЕШЕНО";
+        if (issues.length === 0) {
+            badge.textContent = "GO FOR FLIGHT";
             badge.style.background = "var(--success)";
-            list.innerHTML = "<li><i class='fas fa-check' style='color:var(--success)'></i> Погодные условия в норме.</li>";
+            badge.style.color = "#fff";
+            recList.innerHTML = `
+                <li><i class="fas fa-check" style="color:var(--success)"></i> Условия благоприятные.</li>
+                <li><i class="fas fa-info-circle" style="color:var(--primary)"></i> Источник данных: ${source}</li>
+            `;
         } else {
-            badge.textContent = "ПОЛЕТ ОПАСЕН";
-            badge.style.background = "var(--danger)";
-            errors.forEach(e => list.innerHTML += `<li><i class='fas fa-triangle-exclamation' style='color:var(--danger)'></i> ${e}</li>`);
+            badge.textContent = issues.length <= 2 ? "CAUTION" : "NO GO";
+            badge.style.background = issues.length <= 2 ? "var(--warning)" : "var(--danger)";
+            badge.style.color = "#fff";
+            
+            issues.forEach(iss => {
+                recList.innerHTML += `<li><i class="fas fa-exclamation-triangle" style="color:${issues.length <= 2 ? 'var(--warning)' : 'var(--danger)'}"></i> ${iss}</li>`;
+            });
+            recList.innerHTML += `<li><i class="fas fa-info-circle" style="color:var(--primary)"></i> Источник данных: ${source}</li>`;
         }
 
-        drawChart(forecast.list, drone.wind);
+        // Draw Chart если есть прогноз
+        if (forecast && forecast.list) {
+            drawChart(forecast.list, drone.wind);
+        } else {
+            const ctx = document.getElementById('windChart').getContext('2d');
+            if (chartInstance) chartInstance.destroy();
+            
+            // Пустой график
+            chartInstance = new Chart(ctx, {
+                type: 'line',
+                data: { labels: [], datasets: [] },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'Нет данных прогноза',
+                            color: '#94a3b8'
+                        }
+                    }
+                }
+            });
+        }
     }
 
-    function updateMetric(boxId, valId, val, cls) {
+    function updateMetricBox(boxId, valId, val, statusClass) {
         document.getElementById(valId).textContent = val;
-        document.getElementById(boxId).className = 'metric-box ' + cls;
+        const box = document.getElementById(boxId);
+        box.className = 'metric-box ' + statusClass;
     }
 
+    /* ================= 8. CHART.JS ================= */
     function drawChart(list, limit) {
         const ctx = document.getElementById('windChart').getContext('2d');
-        const data = list.slice(0, 8);
+        
+        // Берем первые 8 точек (24 часа, шаг 3 часа)
+        const slices = list.slice(0, 9);
+        const labels = slices.map(item => {
+            const date = new Date(item.dt * 1000);
+            return `${date.getHours()}:00`;
+        });
+        
+        // Исправление: правильное извлечение порывов из OpenWeather
+        const winds = slices.map(item => item.wind.speed);
+        const gusts = slices.map(item => item.wind.gust || item.wind.speed); // Если gust нет, используем wind.speed
+
         if (chartInstance) chartInstance.destroy();
+
         chartInstance = new Chart(ctx, {
             type: 'line',
             data: {
-                labels: data.map(i => new Date(i.dt*1000).getHours() + ':00'),
-                datasets: [{
-                    label: 'Ветер (м/с)', data: data.map(i => i.wind.speed), borderColor: '#3b82f6', tension: 0.3, fill: true, backgroundColor: 'rgba(59, 130, 246, 0.1)'
-                }, {
-                    label: 'Лимит', data: Array(8).fill(limit), borderColor: '#ef4444', borderDash: [5, 5], pointRadius: 0
-                }]
+                labels: labels,
+                datasets: [
+                    {
+                        label: 'Ветер (м/с)',
+                        data: winds,
+                        borderColor: '#3b82f6',
+                        backgroundColor: 'rgba(59, 130, 246, 0.2)',
+                        fill: true,
+                        tension: 0.4
+                    },
+                    {
+                        label: 'Порывы',
+                        data: gusts,
+                        borderColor: '#f59e0b',
+                        borderDash: [5, 5],
+                        fill: false,
+                        tension: 0.4
+                    },
+                    {
+                        label: 'Лимит дрона',
+                        data: Array(slices.length).fill(limit),
+                        borderColor: '#ef4444',
+                        borderWidth: 2,
+                        pointRadius: 0
+                    }
+                ]
             },
-            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { labels: { color: '#94a3b8' } }
+                },
+                scales: {
+                    y: {
+                        grid: { color: '#334155' },
+                        ticks: { color: '#94a3b8' },
+                        suggestedMax: Math.max(...gusts, limit) + 2
+                    },
+                    x: {
+                        grid: { display: false },
+                        ticks: { color: '#94a3b8' }
+                    }
+                }
+            }
         });
     }
 
-    function showToast(msg, type) {
-        const c = document.getElementById('toast-container');
-        const t = document.createElement('div');
-        t.className = 'toast';
-        t.style.borderLeft = `4px solid ${type === 'error' ? 'var(--danger)' : 'var(--success)'}`;
-        t.textContent = msg;
-        c.appendChild(t);
-        setTimeout(() => t.remove(), 3000);
+    /* ================= 9. TOAST SYSTEM ================= */
+    function showToast(message, type = 'info') {
+        const container = document.getElementById('toast-container');
+        const toast = document.createElement('div');
+        toast.className = `toast ${type}`;
+        
+        let icon = 'info-circle';
+        if (type === 'success') icon = 'check-circle';
+        if (type === 'error') icon = 'times-circle';
+        if (type === 'warning') icon = 'exclamation-triangle';
+
+        toast.innerHTML = `<i class="fas fa-${icon}"></i> <span>${message}</span>`;
+        container.appendChild(toast);
+
+        // Auto remove
+        setTimeout(() => {
+            toast.style.opacity = '0';
+            toast.style.transform = 'translateY(20px)';
+            setTimeout(() => toast.remove(), 300);
+        }, 4000);
     }
 
-    document.addEventListener('DOMContentLoaded', initApp);
 </script>
+
 </body>
 </html>
