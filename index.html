@@ -13,6 +13,13 @@
     <link rel="manifest" href="manifest.json">
     <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
     
+    <!-- Favicon ссылки -->
+    <link rel="icon" type="image/png" sizes="96x96" href="icons/favicon-96x96.png">
+    <link rel="icon" type="image/x-icon" href="icons/favicon.ico">
+    <link rel="icon" type="image/svg+xml" href="icons/favicon.svg">
+    <link rel="icon" type="image/png" sizes="192x192" href="icons/web-app-manifest-192x192.png">
+    <link rel="icon" type="image/png" sizes="512x512" href="icons/web-app-manifest-512x512.png">
+    
     <style>
         :root {
             --bg-dark: #0f172a;
@@ -427,6 +434,43 @@
             width: 100%;
         }
 
+        /* Стили для списка избранных дронов */
+        .favorite-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 12px;
+            background: rgba(255,255,255,0.03);
+            border-radius: 6px;
+            margin-bottom: 5px;
+            border-left: 3px solid var(--warning);
+        }
+        
+        .favorite-item button {
+            background: none;
+            border: 1px solid var(--border);
+            color: var(--text-muted);
+            padding: 4px 8px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.7rem;
+        }
+        
+        .favorite-item button:hover {
+            background: rgba(239, 68, 68, 0.1);
+            color: var(--danger);
+        }
+        
+        .drone-tag {
+            display: inline-block;
+            padding: 2px 6px;
+            background: var(--bg-input);
+            border-radius: 10px;
+            font-size: 0.65rem;
+            color: var(--text-muted);
+            margin-left: 5px;
+        }
+
     </style>
 </head>
 <body>
@@ -448,6 +492,23 @@
                     <label>Модель дрона</label>
                     <select id="droneSelect"></select>
                     <div id="droneSpecs" style="margin-top:5px; font-size:0.75rem; color:var(--text-muted);"></div>
+                </div>
+                
+                <div style="display: flex; gap: 8px; margin-top: 10px;">
+                    <button id="toggleFavoriteBtn" class="btn" style="padding: 8px; font-size: 0.8rem; background: var(--warning);">
+                        <i class="far fa-star"></i> В избранное
+                    </button>
+                    <button onclick="showCustomDroneModal()" class="btn" style="padding: 8px; font-size: 0.8rem; background: var(--success);">
+                        <i class="fas fa-plus"></i> Новый дрон
+                    </button>
+                </div>
+            </div>
+
+            <!-- Блок избранных дронов -->
+            <div class="panel" id="favoritesPanel" style="display: none;">
+                <h3><i class="fas fa-star"></i> Избранные дроны</h3>
+                <div id="favoritesContainer">
+                    <!-- Список избранных будет здесь -->
                 </div>
             </div>
 
@@ -601,13 +662,433 @@
     </div>
 </div>
 
+<!-- Модальное окно для добавления дрона -->
+<div id="customDroneModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.8); z-index: 2000; align-items: center; justify-content: center;">
+    <div class="panel" style="width: 90%; max-width: 500px; max-height: 90vh; overflow-y: auto;">
+        <h3><i class="fas fa-plus-circle"></i> Добавить свой дрон</h3>
+        
+        <div class="form-group">
+            <label>Название модели *</label>
+            <input type="text" id="customDroneName" placeholder="Например: Мой FPV дрон">
+        </div>
+        
+        <div class="form-group">
+            <label>Бренд (производитель)</label>
+            <input type="text" id="customDroneBrand" placeholder="Например: DJI, Autel, Custom">
+        </div>
+        
+        <div class="form-group" style="display: flex; gap: 10px;">
+            <div style="flex: 1;">
+                <label>Макс. ветер (м/с) *</label>
+                <input type="number" id="customDroneWind" placeholder="10.5" step="0.1" min="0">
+            </div>
+            <div style="flex: 1;">
+                <label>Макс. порывы (м/с) *</label>
+                <input type="number" id="customDroneGust" placeholder="13.5" step="0.1" min="0">
+            </div>
+        </div>
+        
+        <div class="form-group" style="display: flex; gap: 10px;">
+            <div style="flex: 1;">
+                <label>Мин. темп. (°C) *</label>
+                <input type="number" id="customDroneMinTemp" placeholder="-10" step="1">
+            </div>
+            <div style="flex: 1;">
+                <label>Макс. темп. (°C) *</label>
+                <input type="number" id="customDroneMaxTemp" placeholder="40" step="1">
+            </div>
+        </div>
+        
+        <div class="form-group">
+            <label>Защита от осадков *</label>
+            <select id="customDroneRain">
+                <option value="false">Нет (дождь/снег запрещены)</option>
+                <option value="true">Да (устойчив к осадкам)</option>
+            </select>
+        </div>
+        
+        <div style="display: flex; gap: 10px; margin-top: 20px;">
+            <button class="btn" onclick="addCustomDrone()" style="background: var(--success); flex: 1;">
+                <i class="fas fa-save"></i> Сохранить дрон
+            </button>
+            <button class="btn" onclick="hideCustomDroneModal()" style="background: var(--danger); flex: 1;">
+                <i class="fas fa-times"></i> Отмена
+            </button>
+        </div>
+        
+        <p style="color: var(--text-muted); font-size: 0.7rem; margin-top: 15px;">
+            * - обязательные поля. Характеристики должны быть реалистичными.
+        </p>
+    </div>
+</div>
+
 <div id="toast-container"></div>
 
 <script>
-    /* ================= 1. DATABASE LOADING ================= */
+    /* ================= 1. РАСШИРЕННАЯ БАЗА ДРОНОВ DJI ================= */
+    const drones = [
+        // Серия DJI Mini (компактные)
+        { id: 'mini5pro', name: 'DJI Mini 5 Pro', brand: 'DJI', wind: 10.5, gust: 13.5, rain: false, minTemp: -10, maxTemp: 40, category: 'mini' },
+        { id: 'mini4pro', name: 'DJI Mini 4 Pro', brand: 'DJI', wind: 10.7, gust: 13, rain: false, minTemp: -10, maxTemp: 40, category: 'mini' },
+        { id: 'mini3pro', name: 'DJI Mini 3 Pro', brand: 'DJI', wind: 10.0, gust: 12.5, rain: false, minTemp: -10, maxTemp: 40, category: 'mini' },
+        { id: 'mini2', name: 'DJI Mini 2', brand: 'DJI', wind: 8.5, gust: 10.5, rain: false, minTemp: 0, maxTemp: 40, category: 'mini' },
+        { id: 'minise', name: 'DJI Mini SE', brand: 'DJI', wind: 8.0, gust: 10.0, rain: false, minTemp: 0, maxTemp: 40, category: 'mini' },
+
+        // Серия DJI Air
+        { id: 'air3', name: 'DJI Air 3', brand: 'DJI', wind: 12.0, gust: 16.0, rain: false, minTemp: -10, maxTemp: 40, category: 'air' },
+        { id: 'air2s', name: 'DJI Air 2S', brand: 'DJI', wind: 10.0, gust: 14.0, rain: false, minTemp: -10, maxTemp: 40, category: 'air' },
+        { id: 'air2', name: 'DJI Air 2', brand: 'DJI', wind: 10.0, gust: 14.0, rain: false, minTemp: -10, maxTemp: 40, category: 'air' },
+
+        // Серия DJI Mavic
+        { id: 'mavic4pro', name: 'DJI Mavic 4 Pro', brand: 'DJI', wind: 14.0, gust: 18.0, rain: false, minTemp: -10, maxTemp: 40, category: 'mavic' },
+        { id: 'mavic3pro', name: 'DJI Mavic 3 Pro', brand: 'DJI', wind: 12.0, gust: 15, rain: false, minTemp: -10, maxTemp: 40, category: 'mavic' },
+        { id: 'mavic3', name: 'DJI Mavic 3', brand: 'DJI', wind: 12.0, gust: 15, rain: false, minTemp: -10, maxTemp: 40, category: 'mavic' },
+        { id: 'mavic2pro', name: 'DJI Mavic 2 Pro', brand: 'DJI', wind: 10.0, gust: 14.0, rain: false, minTemp: -10, maxTemp: 40, category: 'mavic' },
+        { id: 'mavic2zoom', name: 'DJI Mavic 2 Zoom', brand: 'DJI', wind: 10.0, gust: 14.0, rain: false, minTemp: -10, maxTemp: 40, category: 'mavic' },
+        { id: 'mavicpro', name: 'DJI Mavic Pro', brand: 'DJI', wind: 8.0, gust: 10.0, rain: false, minTemp: 0, maxTemp: 40, category: 'mavic' },
+
+        // FPV дроны
+        { id: 'avata2', name: 'DJI Avata 2', brand: 'DJI', wind: 10.5, gust: 14.0, rain: false, minTemp: -5, maxTemp: 35, category: 'fpv' },
+        { id: 'avata', name: 'DJI Avata', brand: 'DJI', wind: 10.0, gust: 13.5, rain: false, minTemp: -5, maxTemp: 35, category: 'fpv' },
+        { id: 'fpv', name: 'DJI FPV', brand: 'DJI', wind: 12.0, gust: 16.0, rain: false, minTemp: -5, maxTemp: 35, category: 'fpv' },
+
+        // Профессиональные серии
+        { id: 'inspire3', name: 'DJI Inspire 3', brand: 'DJI', wind: 15.0, gust: 20.0, rain: true, minTemp: -20, maxTemp: 50, category: 'pro' },
+        { id: 'inspire2', name: 'DJI Inspire 2', brand: 'DJI', wind: 12.0, gust: 16.0, rain: true, minTemp: -20, maxTemp: 50, category: 'pro' },
+        { id: 'matrice30t', name: 'DJI Matrice 30T', brand: 'DJI', wind: 15.0, gust: 20, rain: true, minTemp: -20, maxTemp: 50, category: 'pro' },
+        { id: 'matrice350', name: 'DJI Matrice 350', brand: 'DJI', wind: 12.0, gust: 18, rain: true, minTemp: -20, maxTemp: 50, category: 'pro' },
+        { id: 'matrice300', name: 'DJI Matrice 300 RTK', brand: 'DJI', wind: 15.0, gust: 20.0, rain: true, minTemp: -20, maxTemp: 50, category: 'pro' },
+
+        // Другие бренды
+        { id: 'autelEvo2', name: 'Autel EVO II V3', brand: 'Autel', wind: 12.0, gust: 17, rain: false, minTemp: -10, maxTemp: 40, category: 'other' },
+        { id: 'autelEvoLite', name: 'Autel EVO Lite+', brand: 'Autel', wind: 10.0, gust: 14.0, rain: false, minTemp: -10, maxTemp: 40, category: 'other' },
+        { id: 'skydio2', name: 'Skydio 2+', brand: 'Skydio', wind: 10.0, gust: 13.0, rain: false, minTemp: 0, maxTemp: 40, category: 'other' },
+        { id: 'parrotAnafi', name: 'Parrot Anafi USA', brand: 'Parrot', wind: 15.0, gust: 20.0, rain: true, minTemp: -10, maxTemp: 50, category: 'other' },
+        { id: 'fpvCustom', name: 'FPV Custom 5"', brand: 'Custom', wind: 15.0, gust: 25, rain: false, minTemp: -5, maxTemp: 40, category: 'fpv' }
+    ];
+
+    /* ================= 2. УПРАВЛЕНИЕ ИЗБРАННЫМИ И ПОЛЬЗОВАТЕЛЬСКИМИ ДРОНАМИ ================= */
+    let favoriteDrones = JSON.parse(localStorage.getItem('droneAdvisorFavorites')) || [];
+    let customDrones = JSON.parse(localStorage.getItem('droneAdvisorCustomDrones')) || [];
+
+    function saveFavorites() {
+        localStorage.setItem('droneAdvisorFavorites', JSON.stringify(favoriteDrones));
+    }
+
+    function saveCustomDrones() {
+        localStorage.setItem('droneAdvisorCustomDrones', JSON.stringify(customDrones));
+    }
+
+    /* ================= 3. STATE & INIT ================= */
+    let selectedAirport = null;
+    let chartInstance = null;
+    let searchTimeout = null;
+    let currentData = null;
+    let forecastData = null;
     let airportDB = [];
     let isAirportsLoaded = false;
 
+    /* ================= 4. ИНИЦИАЛИЗАЦИЯ ================= */
+    document.addEventListener('DOMContentLoaded', async () => {
+        await loadAirportsData();
+        initDrones();
+        updateFavoritesPanel();
+        
+        document.getElementById('searchInput').addEventListener('input', handleSearch);
+        document.getElementById('toggleFavoriteBtn').addEventListener('click', toggleCurrentFavorite);
+        document.getElementById('droneSelect').addEventListener('change', updateDroneSpecs);
+        
+        document.addEventListener('click', (e) => {
+            if(!e.target.closest('.form-group')) {
+                document.getElementById('searchResults').style.display = 'none';
+            }
+        });
+        
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('service-worker.js').then(
+                    (registration) => {
+                        console.log('ServiceWorker зарегистрирован:', registration.scope);
+                    },
+                    (err) => {
+                        console.log('Ошибка регистрации ServiceWorker:', err);
+                    }
+                );
+            });
+        }
+    });
+
+    /* ================= 5. ФУНКЦИИ УПРАВЛЕНИЯ ДРОНАМИ ================= */
+    function initDrones() {
+        renderDroneList();
+        updateDroneSpecs();
+    }
+
+    function renderDroneList() {
+        const droneSelect = document.getElementById('droneSelect');
+        droneSelect.innerHTML = '';
+
+        // Все дроны: стандартные + пользовательские
+        const allDrones = [...drones, ...customDrones];
+
+        // Группировка: Избранные
+        const favoriteDroneList = allDrones.filter(d => favoriteDrones.includes(d.id));
+        if (favoriteDroneList.length > 0) {
+            const optgroupFav = document.createElement('optgroup');
+            optgroupFav.label = '⭐ Избранные';
+            favoriteDroneList.forEach(d => {
+                const option = createDroneOption(d, true);
+                optgroupFav.appendChild(option);
+            });
+            droneSelect.appendChild(optgroupFav);
+        }
+
+        // Группировка: DJI дроны
+        const djiDrones = allDrones.filter(d => d.brand === 'DJI' && !favoriteDrones.includes(d.id));
+        if (djiDrones.length > 0) {
+            const optgroupDJI = document.createElement('optgroup');
+            optgroupDJI.label = 'DJI';
+            djiDrones.forEach(d => {
+                const option = createDroneOption(d, false);
+                optgroupDJI.appendChild(option);
+            });
+            droneSelect.appendChild(optgroupDJI);
+        }
+
+        // Группировка: Прочие бренды
+        const otherDrones = allDrones.filter(d => 
+            d.brand !== 'DJI' && 
+            d.brand !== 'Пользовательский' && 
+            !favoriteDrones.includes(d.id) &&
+            d.brand !== 'Custom'
+        );
+        if (otherDrones.length > 0) {
+            const optgroupOther = document.createElement('optgroup');
+            optgroupOther.label = 'Другие бренды';
+            otherDrones.forEach(d => {
+                const option = createDroneOption(d, false);
+                optgroupOther.appendChild(option);
+            });
+            droneSelect.appendChild(optgroupOther);
+        }
+
+        // Группировка: Пользовательские дроны
+        const customDroneList = customDrones.filter(d => !favoriteDrones.includes(d.id));
+        if (customDroneList.length > 0) {
+            const optgroupCustom = document.createElement('optgroup');
+            optgroupCustom.label = 'Мои дроны';
+            customDroneList.forEach(d => {
+                const option = createDroneOption(d, false);
+                optgroupCustom.appendChild(option);
+            });
+            droneSelect.appendChild(optgroupCustom);
+        }
+
+        // Если нет дронов в списке
+        if (droneSelect.options.length === 0) {
+            const option = document.createElement('option');
+            option.value = '';
+            option.textContent = 'Нет доступных дронов';
+            droneSelect.appendChild(option);
+        }
+    }
+
+    function createDroneOption(drone, isFavorite) {
+        const option = document.createElement('option');
+        option.value = drone.id;
+        option.textContent = (isFavorite ? '⭐ ' : '') + drone.name;
+        option.dataset.drone = JSON.stringify(drone);
+        return option;
+    }
+
+    function getCurrentDrone() {
+        const select = document.getElementById('droneSelect');
+        if (select.value && select.options[select.selectedIndex].dataset.drone) {
+            return JSON.parse(select.options[select.selectedIndex].dataset.drone);
+        }
+        return null;
+    }
+
+    function updateDroneSpecs() {
+        const drone = getCurrentDrone();
+        const specsDiv = document.getElementById('droneSpecs');
+        const favBtn = document.getElementById('toggleFavoriteBtn');
+        
+        if (drone) {
+            const isFavorite = favoriteDrones.includes(drone.id);
+            specsDiv.innerHTML = `
+                Макс. ветер: <b>${drone.wind} м/с</b> | 
+                Порывы: <b>${drone.gust} м/с</b> | 
+                Дождь: <b>${drone.rain ? 'ДА ✓' : 'НЕТ'}</b> | 
+                Температура: ${drone.minTemp}° до ${drone.maxTemp}°C
+            `;
+            
+            favBtn.innerHTML = isFavorite ? 
+                '<i class="fas fa-star"></i> Убрать из избранного' : 
+                '<i class="far fa-star"></i> В избранное';
+            favBtn.style.background = isFavorite ? 'var(--warning)' : 'var(--bg-input)';
+        } else {
+            specsDiv.innerHTML = 'Выберите дрон для отображения характеристик';
+            favBtn.innerHTML = '<i class="far fa-star"></i> В избранное';
+            favBtn.style.background = 'var(--bg-input)';
+        }
+    }
+
+    function toggleCurrentFavorite() {
+        const drone = getCurrentDrone();
+        if (!drone) {
+            showToast('Сначала выберите дрон!', 'warning');
+            return;
+        }
+        
+        const index = favoriteDrones.indexOf(drone.id);
+        if (index === -1) {
+            favoriteDrones.push(drone.id);
+            showToast(`Дрон "${drone.name}" добавлен в избранное`, 'success');
+        } else {
+            favoriteDrones.splice(index, 1);
+            showToast(`Дрон "${drone.name}" удален из избранного`, 'info');
+        }
+        
+        saveFavorites();
+        updateDroneSpecs();
+        renderDroneList();
+        updateFavoritesPanel();
+    }
+
+    function updateFavoritesPanel() {
+        const container = document.getElementById('favoritesContainer');
+        const panel = document.getElementById('favoritesPanel');
+        
+        if (favoriteDrones.length > 0) {
+            panel.style.display = 'block';
+            
+            // Находим дроны по ID
+            const allDrones = [...drones, ...customDrones];
+            const favoriteDroneList = allDrones.filter(d => favoriteDrones.includes(d.id));
+            
+            container.innerHTML = '';
+            favoriteDroneList.forEach(drone => {
+                const div = document.createElement('div');
+                div.className = 'favorite-item';
+                div.innerHTML = `
+                    <div>
+                        <strong>${drone.name}</strong>
+                        <span class="drone-tag">${drone.brand}</span>
+                    </div>
+                    <button onclick="selectAndRemoveFavorite('${drone.id}')" title="Выбрать и удалить из избранного">
+                        <i class="fas fa-times"></i>
+                    </button>
+                `;
+                div.onclick = () => selectDroneById(drone.id);
+                container.appendChild(div);
+            });
+        } else {
+            panel.style.display = 'none';
+            container.innerHTML = '<p style="color: var(--text-muted); font-size: 0.8rem;">Здесь появятся дроны, отмеченные звездочкой</p>';
+        }
+    }
+
+    function selectDroneById(droneId) {
+        const select = document.getElementById('droneSelect');
+        for (let i = 0; i < select.options.length; i++) {
+            if (select.options[i].value === droneId) {
+                select.selectedIndex = i;
+                updateDroneSpecs();
+                showToast(`Выбран дрон: ${select.options[i].textContent}`, 'info');
+                break;
+            }
+        }
+    }
+
+    function selectAndRemoveFavorite(droneId) {
+        event.stopPropagation(); // Останавливаем всплытие события
+        
+        // Удаляем из избранного
+        const index = favoriteDrones.indexOf(droneId);
+        if (index !== -1) {
+            favoriteDrones.splice(index, 1);
+            saveFavorites();
+            
+            // Обновляем интерфейс
+            updateDroneSpecs();
+            renderDroneList();
+            updateFavoritesPanel();
+            
+            showToast('Дрон удален из избранного', 'info');
+        }
+    }
+
+    /* ================= 6. ПОЛЬЗОВАТЕЛЬСКИЕ ДРОНЫ ================= */
+    function showCustomDroneModal() {
+        document.getElementById('customDroneModal').style.display = 'flex';
+    }
+
+    function hideCustomDroneModal() {
+        document.getElementById('customDroneModal').style.display = 'none';
+        // Сбрасываем форму
+        document.getElementById('customDroneForm').reset();
+    }
+
+    function addCustomDrone() {
+        const name = document.getElementById('customDroneName').value.trim();
+        const brand = document.getElementById('customDroneBrand').value.trim() || 'Пользовательский';
+        const wind = parseFloat(document.getElementById('customDroneWind').value);
+        const gust = parseFloat(document.getElementById('customDroneGust').value);
+        const rain = document.getElementById('customDroneRain').value === 'true';
+        const minTemp = parseInt(document.getElementById('customDroneMinTemp').value);
+        const maxTemp = parseInt(document.getElementById('customDroneMaxTemp').value);
+
+        // Валидация
+        if (!name) {
+            showToast('Введите название дрона!', 'error');
+            return;
+        }
+        if (isNaN(wind) || wind <= 0) {
+            showToast('Введите корректную максимальную скорость ветра!', 'error');
+            return;
+        }
+        if (isNaN(gust) || gust <= 0 || gust < wind) {
+            showToast('Порывы должны быть больше или равны скорости ветра!', 'error');
+            return;
+        }
+        if (isNaN(minTemp) || isNaN(maxTemp) || minTemp >= maxTemp) {
+            showToast('Введите корректный температурный диапазон!', 'error');
+            return;
+        }
+
+        const customId = 'custom_' + Date.now();
+        const newDrone = {
+            id: customId,
+            name: name,
+            brand: brand,
+            wind: wind,
+            gust: gust,
+            rain: rain,
+            minTemp: minTemp,
+            maxTemp: maxTemp,
+            category: 'custom'
+        };
+
+        customDrones.push(newDrone);
+        saveCustomDrones();
+        
+        // Автоматически добавляем в избранное
+        if (!favoriteDrones.includes(customId)) {
+            favoriteDrones.push(customId);
+            saveFavorites();
+        }
+        
+        // Обновляем интерфейс
+        renderDroneList();
+        selectDroneById(customId);
+        updateFavoritesPanel();
+        
+        showToast(`Дрон "${name}" добавлен!`, 'success');
+        hideCustomDroneModal();
+    }
+
+    /* ================= 7. ЗАГРУЗКА ДАННЫХ АЭРОПОРТОВ ================= */
     async function loadAirportsData() {
         try {
             showToast("Загрузка базы аэропортов...", "info");
@@ -668,64 +1149,7 @@
         ];
     }
 
-    const drones = [
-        { name: "DJI Mini 4 Pro", wind: 10.7, gust: 13, rain: false, minTemp: -10, maxTemp: 40 },
-        { name: "DJI Mavic 3 Pro", wind: 12.0, gust: 15, rain: false, minTemp: -10, maxTemp: 40 },
-        { name: "DJI Matrice 30T", wind: 15.0, gust: 20, rain: true, minTemp: -20, maxTemp: 50 },
-        { name: "DJI Matrice 350", wind: 12.0, gust: 18, rain: true, minTemp: -20, maxTemp: 50 },
-        { name: "Autel EVO II V3", wind: 12.0, gust: 17, rain: false, minTemp: -10, maxTemp: 40 },
-        { name: "FPV Custom 5\"", wind: 15.0, gust: 25, rain: false, minTemp: -5, maxTemp: 40 }
-    ];
-
-    /* ================= 2. STATE & INIT ================= */
-    let selectedAirport = null;
-    let chartInstance = null;
-    let searchTimeout = null;
-    let currentData = null;
-    let forecastData = null;
-
-    document.addEventListener('DOMContentLoaded', async () => {
-        await loadAirportsData();
-        initDrones();
-        document.getElementById('searchInput').addEventListener('input', handleSearch);
-        
-        document.addEventListener('click', (e) => {
-            if(!e.target.closest('.form-group')) document.getElementById('searchResults').style.display = 'none';
-        });
-        
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('service-worker.js').then(
-                    (registration) => {
-                        console.log('ServiceWorker зарегистрирован:', registration.scope);
-                    },
-                    (err) => {
-                        console.log('Ошибка регистрации ServiceWorker:', err);
-                    }
-                );
-            });
-        }
-    });
-
-    function initDrones() {
-        const sel = document.getElementById('droneSelect');
-        drones.forEach((d, i) => {
-            const opt = document.createElement('option');
-            opt.value = i;
-            opt.textContent = d.name;
-            sel.appendChild(opt);
-        });
-        sel.addEventListener('change', updateDroneSpecs);
-        updateDroneSpecs();
-    }
-
-    function updateDroneSpecs() {
-        const d = drones[document.getElementById('droneSelect').value];
-        document.getElementById('droneSpecs').innerHTML = 
-            `Max Wind: <b>${d.wind} m/s</b> | Rain: <b>${d.rain ? 'YES' : 'NO'}</b> | Temp: ${d.minTemp}° to ${d.maxTemp}°`;
-    }
-
-    /* ================= 3. COLLAPSE TOGGLE FUNCTION ================= */
+    /* ================= 8. COLLAPSE TOGGLE FUNCTION ================= */
     function toggleCollapse(collapseId, headerElement) {
         const content = document.getElementById(collapseId);
         const icon = headerElement.querySelector('.collapse-icon');
@@ -739,7 +1163,7 @@
         }
     }
 
-    /* ================= 4. ФУНКЦИЯ ПРЕОБРАЗОВАНИЯ ГРАДУСОВ В РУМБЫ ================= */
+    /* ================= 9. ФУНКЦИЯ ПРЕОБРАЗОВАНИЯ ГРАДУСОВ В РУМБЫ ================= */
     function degreesToCardinal(degrees) {
         if (degrees === null || degrees === undefined) return 'N/A';
         const normalized = (degrees % 360 + 360) % 360;
@@ -753,7 +1177,7 @@
         return cardinals[index];
     }
 
-    /* ================= 5. SEARCH LOGIC ================= */
+    /* ================= 10. ПОИСК АЭРОПОРТОВ ================= */
     function handleSearch(e) {
         if (!isAirportsLoaded) {
             showToast("База аэропортов еще загружается...", "warning");
@@ -802,10 +1226,16 @@
         document.getElementById('searchResults').style.display = 'none';
     }
 
-    /* ================= 6. MAIN LOGIC ================= */
+    /* ================= 11. ОСНОВНАЯ ЛОГИКА АНАЛИЗА ================= */
     async function runAnalysis() {
         if (!selectedAirport) {
             showToast("Сначала выберите аэропорт из списка!", "error");
+            return;
+        }
+
+        const drone = getCurrentDrone();
+        if (!drone) {
+            showToast("Сначала выберите дрон!", "error");
             return;
         }
 
@@ -831,10 +1261,14 @@
             ]);
 
             if (apiKey) {
-                forecastData = await fetchOWMForecast(selectedAirport.lat, selectedAirport.lon, apiKey);
+                try {
+                    forecastData = await fetchOWMForecast(selectedAirport.lat, selectedAirport.lon, apiKey);
+                } catch (forecastError) {
+                    console.warn("Не удалось загрузить прогноз:", forecastError);
+                    forecastData = null;
+                }
             } else {
                 forecastData = null;
-                showToast("API ключ отсутствует - график прогноза не будет построен", "warning");
             }
 
             let primaryData = null;
@@ -876,7 +1310,7 @@
         }
     }
 
-    /* ================= 7. DATA FETCHERS ================= */
+    /* ================= 12. DATA FETCHERS ================= */
     async function fetchMetar(icao) {
         if (!icao || icao.length !== 4) {
             throw new Error("Неверный код ICAO");
@@ -910,21 +1344,26 @@
         
         const data = await res.json();
         
+        // Определяем осадки - любые осадки считаются опасными для дронов без влагозащиты
         let precip = "Нет";
         let precipAmount = 0;
+        let hasPrecipitation = false;
         
         if (data.rain && data.rain["1h"]) {
             precip = `Дождь: ${data.rain["1h"]}мм`;
             precipAmount = data.rain["1h"];
+            hasPrecipitation = true;
         } else if (data.snow && data.snow["1h"]) {
             precip = `Снег: ${data.snow["1h"]}мм`;
             precipAmount = data.snow["1h"];
+            hasPrecipitation = true;
         } else if (data.weather && data.weather[0]) {
             const weatherMain = data.weather[0].main.toLowerCase();
-            if (weatherMain.includes("rain") || weatherMain.includes("drizzle")) {
-                precip = "Дождь";
-            } else if (weatherMain.includes("snow")) {
-                precip = "Снег";
+            if (weatherMain.includes("rain") || weatherMain.includes("drizzle") || 
+                weatherMain.includes("snow") || weatherMain.includes("sleet") ||
+                weatherMain.includes("shower")) {
+                hasPrecipitation = true;
+                precip = data.weather[0].description;
             }
         }
         
@@ -956,12 +1395,13 @@
             'FU': 'Дым'
         };
         
-        // Проверка на опасные явления
+        // Проверка на опасные явления - АБСОЛЮТНЫЙ ЗАПРЕТ ДЛЯ ВСЕХ ДРОНОВ
         const dangerousKeywords = [
-            { keywords: ['thunderstorm', 'гроза', 'гроз'], code: 'TS' },
+            { keywords: ['thunderstorm', 'гроза', 'гроз', 'торнадо', 'ураган'], code: 'TS' },
             { keywords: ['squall', 'шквал'], code: 'SQ' },
-            { keywords: ['sand', 'dust', 'песч', 'пыл'], code: 'SS' },
-            { keywords: ['tornado', 'торнадо'], code: 'TS' }
+            { keywords: ['sand', 'dust', 'песч', 'пыл', 'буря'], code: 'SS' },
+            { keywords: ['tornado', 'торнадо'], code: 'TS' },
+            { keywords: ['ash', 'пепел', 'вулкан'], code: 'VA' }
         ];
         
         dangerousKeywords.forEach(item => {
@@ -974,7 +1414,7 @@
         const otherKeywords = [
             { keywords: ['fog', 'mist', 'haze', 'туман', 'дымка', 'мгла'] },
             { keywords: ['drizzle', 'морось'] },
-            { keywords: ['ash', 'пепел'] }
+            { keywords: ['smoke', 'дым'] }
         ];
         
         otherKeywords.forEach(item => {
@@ -983,12 +1423,16 @@
             }
         });
         
+        // Исправление: гарантируем, что gust всегда имеет значение
+        const windSpeed = data.wind.speed || 0;
+        const windGust = data.wind.gust || windSpeed;
+        
         return {
             source: 'OpenWeather Current',
             raw: JSON.stringify(data, null, 2),
             parsed: {
-                wind: data.wind.speed,
-                gust: data.wind.gust || data.wind.speed,
+                wind: windSpeed,
+                gust: windGust,
                 windDir: data.wind.deg || 0,
                 temp: data.main.temp,
                 humidity: data.main.humidity,
@@ -996,8 +1440,7 @@
                 precip: precip,
                 precipAmount: precipAmount,
                 pressure: data.main.pressure,
-                rain: data.weather && data.weather[0] && 
-                      (data.weather[0].main === 'Rain' || data.weather[0].main === 'Snow' || data.weather[0].main === 'Drizzle'),
+                rain: hasPrecipitation,
                 weatherPhenomena: weatherPhenomena,
                 hasDangerousPhenomena: weatherPhenomena.dangerous.length > 0
             }
@@ -1014,14 +1457,14 @@
         return await res.json();
     }
 
-    /* ================= 8. PARSERS & UI ================= */
+    /* ================= 13. PARSERS & UI ================= */
     function parseMetar(metar) {
         const data = { 
             wind: 0, 
             gust: 0, 
             windDir: 0,
             temp: 20, 
-            humidity: null,
+            humidity: 50,
             visibility: 9999, 
             precip: "Нет",
             precipAmount: 0,
@@ -1057,12 +1500,21 @@
             data.gust = Math.round(gust * 10) / 10;
         }
 
-        // Температура
+        // Температура и влажность
         const tempRegex = /\s(M?\d{2})\/(M?\d{2})\s/;
         const tempMatch = metar.match(tempRegex);
         if (tempMatch) {
             let tempStr = tempMatch[1];
+            let dewStr = tempMatch[2];
             data.temp = parseInt(tempStr.replace('M', '-'));
+            const dewPoint = parseInt(dewStr.replace('M', '-'));
+            
+            // Расчет влажности по формуле
+            const es_t = 6.11 * Math.exp(5423 * (1/273.16 - 1/(data.temp + 273.16)));
+            const es_d = 6.11 * Math.exp(5423 * (1/273.16 - 1/(dewPoint + 273.16)));
+            data.humidity = Math.round((es_d / es_t) * 100);
+            if (data.humidity > 100) data.humidity = 100;
+            if (data.humidity < 0) data.humidity = 0;
         }
 
         // Видимость
@@ -1114,18 +1566,45 @@
 
         data.hasDangerousPhenomena = data.weatherPhenomena.dangerous.length > 0;
 
-        // Осадки в METAR
+        // Осадки в METAR - любые осадки считаются опасными для дронов без влагозащиты
         let precipTypes = [];
-        if (/RA/.test(metar)) precipTypes.push("Дождь");
-        if (/SN/.test(metar)) precipTypes.push("Снег");
-        if (/DZ/.test(metar)) precipTypes.push("Морось");
-        if (/SG/.test(metar)) precipTypes.push("Снежные зерна");
-        if (/PL/.test(metar)) precipTypes.push("Ледяной дождь");
-        if (/GS/.test(metar)) precipTypes.push("Град");
+        let hasPrecipitation = false;
+        
+        if (/RA/.test(metar)) { 
+            precipTypes.push("Дождь"); 
+            hasPrecipitation = true; 
+        }
+        if (/SN/.test(metar)) { 
+            precipTypes.push("Снег"); 
+            hasPrecipitation = true; 
+        }
+        if (/DZ/.test(metar)) { 
+            precipTypes.push("Морось"); 
+            hasPrecipitation = true; 
+        }
+        if (/SG/.test(metar)) { 
+            precipTypes.push("Снежные зерна"); 
+            hasPrecipitation = true; 
+        }
+        if (/PL/.test(metar)) { 
+            precipTypes.push("Ледяной дождь"); 
+            hasPrecipitation = true; 
+        }
+        if (/GS/.test(metar)) { 
+            precipTypes.push("Град"); 
+            hasPrecipitation = true; 
+        }
+        if (/GR/.test(metar)) { 
+            precipTypes.push("Град"); 
+            hasPrecipitation = true; 
+        }
         
         if (precipTypes.length > 0) {
             data.precip = precipTypes.join(", ");
             data.rain = true;
+        } else {
+            data.precip = "Нет";
+            data.rain = false;
         }
 
         // Давление
@@ -1143,7 +1622,12 @@
     }
 
     function updateDashboard(current, forecast, source) {
-        const drone = drones[document.getElementById('droneSelect').value];
+        const drone = getCurrentDrone();
+        if (!drone) {
+            showToast("Дрон не выбран!", "error");
+            return;
+        }
+        
         const d = current.parsed;
 
         // ВЕТЕР (первый ряд)
@@ -1193,19 +1677,20 @@
         
         // Осадки
         const precipText = d.precip || (d.rain ? "Есть" : "Нет");
+        // Если есть любые осадки И дрон не влагозащищен - СТОП
         updateMetricBox('boxPrecip', 'valPrecip', precipText, 
             (d.rain && !drone.rain) ? 'status-danger' : 'status-ok');
 
         // ПОГОДНЫЕ ЯВЛЕНИЯ
         document.getElementById('weatherPhenomenaContainer').style.display = 'block';
         
-        // Опасные явления
+        // Опасные явления (АБСОЛЮТНЫЙ ЗАПРЕТ ДЛЯ ВСЕХ ДРОНОВ)
         const dangerousDiv = document.getElementById('dangerousPhenomena');
         if (d.hasDangerousPhenomena && d.weatherPhenomena.dangerous.length > 0) {
             dangerousDiv.innerHTML = `
                 <div class="phenomena-alert">
                     <i class="fas fa-radiation-alt"></i>
-                    <strong>Опасные явления:</strong>
+                    <strong>ОПАСНОСТЬ! Абсолютный запрет полетов:</strong>
                     <ul>${d.weatherPhenomena.dangerous.map(p => `<li>${p}</li>`).join('')}</ul>
                 </div>
             `;
@@ -1225,23 +1710,43 @@
 
         // Status Logic
         let issues = [];
+        
+        // 1. АБСОЛЮТНЫЕ ЗАПРЕТЫ (останавливают все дроны)
+        if (d.hasDangerousPhenomena) {
+            issues.push(`<strong>АБСОЛЮТНЫЙ ЗАПРЕТ:</strong> Обнаружены опасные погодные явления: ${d.weatherPhenomena.dangerous.join(', ')}. Полеты запрещены для всех дронов.`);
+        }
+        
+        // 2. ОБЫЧНЫЕ ПРЕПЯТСТВИЯ
         if (d.wind > drone.wind) issues.push(`Ветер (${d.wind.toFixed(1)} м/с) превышает лимит дрона (${drone.wind} м/с).`);
         if (d.gust > drone.gust) issues.push(`Порывы (${d.gust.toFixed(1)} м/с) превышают лимит дрона (${drone.gust} м/с).`);
-        if (d.rain && !drone.rain) issues.push("Осадки. Дрон не влагозащищен.");
+        
+        // 3. ОСАДКИ - если дрон не влагозащищен, любые осадки запрещены
+        if (d.rain && !drone.rain) issues.push(`<strong>АБСОЛЮТНЫЙ ЗАПРЕТ:</strong> Осадки (${d.precip}). Дрон не влагозащищен.`);
+        
         if (d.temp < drone.minTemp) issues.push(`Температура (${d.temp.toFixed(1)}°C) ниже минимальной (${drone.minTemp}°C).`);
         if (d.temp > drone.maxTemp) issues.push(`Температура (${d.temp.toFixed(1)}°C) выше максимальной (${drone.maxTemp}°C).`);
         if (visibility < 1000) issues.push(`Видимость (${visDisplay}) ограничена.`);
-        
-        // Добавляем опасные погодные явления в рекомендации
-        if (d.hasDangerousPhenomena) {
-            issues.push(`Обнаружены опасные погодные явления: ${d.weatherPhenomena.dangerous.join(', ')}.`);
-        }
 
         const badge = document.getElementById('statusBadge');
         const recList = document.getElementById('recList');
         recList.innerHTML = '';
 
-        if (issues.length === 0) {
+        // Проверяем есть ли абсолютные запреты
+        const hasAbsoluteBan = d.hasDangerousPhenomena || (d.rain && !drone.rain);
+        
+        if (hasAbsoluteBan) {
+            badge.textContent = "ABSOLUTE NO GO";
+            badge.style.background = "var(--danger)";
+            badge.style.color = "#fff";
+            recList.innerHTML = `
+                <li><i class="fas fa-skull-crossbones" style="color:var(--danger)"></i> <strong>АБСОЛЮТНЫЙ ЗАПРЕТ ПОЛЕТОВ</strong></li>
+            `;
+            issues.forEach(iss => {
+                if (iss.includes('АБСОЛЮТНЫЙ ЗАПРЕТ')) {
+                    recList.innerHTML += `<li><i class="fas fa-ban" style="color:var(--danger)"></i> ${iss}</li>`;
+                }
+            });
+        } else if (issues.length === 0) {
             badge.textContent = "GO FOR FLIGHT";
             badge.style.background = "var(--success)";
             badge.style.color = "#fff";
@@ -1257,11 +1762,13 @@
             issues.forEach(iss => {
                 recList.innerHTML += `<li><i class="fas fa-exclamation-triangle" style="color:${issues.length <= 2 ? 'var(--warning)' : 'var(--danger)'}"></i> ${iss}</li>`;
             });
-            recList.innerHTML += `<li><i class="fas fa-info-circle" style="color:var(--primary)"></i> Источник данных: ${source}</li>`;
         }
+        
+        // Всегда добавляем информацию об источнике данных
+        recList.innerHTML += `<li><i class="fas fa-info-circle" style="color:var(--primary)"></i> Источник данных: ${source}</li>`;
 
         // Draw Chart если есть прогноз
-        if (forecast && forecast.list) {
+        if (forecast && forecast.list && forecast.list.length > 0) {
             drawChart(forecast.list, drone.wind);
         } else {
             const ctx = document.getElementById('windChart').getContext('2d');
@@ -1296,18 +1803,19 @@
         box.className = 'metric-box ' + statusClass;
     }
 
-    /* ================= 9. CHART.JS ================= */
+    /* ================= 14. CHART.JS ================= */
     function drawChart(list, limit) {
         const ctx = document.getElementById('windChart').getContext('2d');
         
-        const slices = list.slice(0, 9);
+        // Берем первые 8 точек прогноза (24 часа при 3-часовом интервале)
+        const slices = list.slice(0, 8);
         const labels = slices.map(item => {
             const date = new Date(item.dt * 1000);
             return `${date.getHours()}:00`;
         });
         
-        const winds = slices.map(item => item.wind.speed);
-        const gusts = slices.map(item => item.wind.gust || item.wind.speed);
+        const winds = slices.map(item => item.wind.speed || 0);
+        const gusts = slices.map(item => item.wind.gust || item.wind.speed || 0);
 
         if (chartInstance) chartInstance.destroy();
 
@@ -1322,7 +1830,8 @@
                         borderColor: '#3b82f6',
                         backgroundColor: 'rgba(59, 130, 246, 0.2)',
                         fill: true,
-                        tension: 0.4
+                        tension: 0.4,
+                        borderWidth: 2
                     },
                     {
                         label: 'Порывы',
@@ -1330,14 +1839,16 @@
                         borderColor: '#f59e0b',
                         borderDash: [5, 5],
                         fill: false,
-                        tension: 0.4
+                        tension: 0.4,
+                        borderWidth: 2
                     },
                     {
                         label: 'Лимит дрона',
                         data: Array(slices.length).fill(limit),
                         borderColor: '#ef4444',
-                        borderWidth: 2,
-                        pointRadius: 0
+                        borderWidth: 1,
+                        pointRadius: 0,
+                        borderDash: [3, 3]
                     }
                 ]
             },
@@ -1345,24 +1856,55 @@
                 responsive: true,
                 maintainAspectRatio: false,
                 plugins: {
-                    legend: { labels: { color: '#94a3b8' } }
+                    legend: { 
+                        labels: { 
+                            color: '#94a3b8',
+                            font: { size: 11 }
+                        }
+                    },
+                    tooltip: {
+                        mode: 'index',
+                        intersect: false,
+                        backgroundColor: 'rgba(30, 41, 59, 0.9)',
+                        titleColor: '#f1f5f9',
+                        bodyColor: '#cbd5e1',
+                        borderColor: '#475569',
+                        borderWidth: 1
+                    }
                 },
                 scales: {
                     y: {
-                        grid: { color: '#334155' },
-                        ticks: { color: '#94a3b8' },
-                        suggestedMax: Math.max(...gusts, limit) + 2
+                        grid: { 
+                            color: '#334155',
+                            drawBorder: false
+                        },
+                        ticks: { 
+                            color: '#94a3b8',
+                            font: { size: 10 }
+                        },
+                        suggestedMax: Math.max(...gusts, limit) + 2,
+                        title: {
+                            display: true,
+                            text: 'м/с',
+                            color: '#94a3b8'
+                        }
                     },
                     x: {
-                        grid: { display: false },
-                        ticks: { color: '#94a3b8' }
+                        grid: { 
+                            display: false,
+                            drawBorder: false
+                        },
+                        ticks: { 
+                            color: '#94a3b8',
+                            font: { size: 10 }
+                        }
                     }
                 }
             }
         });
     }
 
-    /* ================= 10. TOAST SYSTEM ================= */
+    /* ================= 15. TOAST SYSTEM ================= */
     function showToast(message, type = 'info') {
         const container = document.getElementById('toast-container');
         const toast = document.createElement('div');
