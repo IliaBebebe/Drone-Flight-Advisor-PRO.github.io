@@ -1,8 +1,9 @@
 // service-worker.js
-const CACHE_NAME = 'drone-advisor-v2';
+const CACHE_NAME = 'drone-advisor-v3';
 const urlsToCache = [
   './',
   './index.html',
+  './drones.js',
   './manifest.json',
   './airports.dat',
   'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css',

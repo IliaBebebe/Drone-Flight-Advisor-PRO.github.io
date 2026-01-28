@@ -1,0 +1,8 @@
+# Environment variables
+.env
+
+# Gemini CLI metadata
+.gemini/
+
+# Gemini-generated project overview
+GEMINI.md
