@@ -551,9 +551,12 @@
                     <div id="searchResults" class="search-dropdown"></div>
                 </div>
 
-                <div class="form-group">
-                    <button onclick="showMapModal()" class="btn" style="background: var(--accent); font-size: 0.8rem; padding: 10px;">
-                        <i class="fas fa-map-marked-alt"></i> Выбрать точку на карте
+                <div class="form-group" style="display: flex; gap: 10px;">
+                    <button onclick="showMapModal()" class="btn" style="background: var(--accent); font-size: 0.8rem; padding: 10px; flex: 1;">
+                        <i class="fas fa-map-marked-alt"></i> На карте
+                    </button>
+                    <button id="locateMeBtn" class="btn" style="background: var(--accent); font-size: 0.8rem; padding: 10px; flex: 1;">
+                        <i class="fas fa-crosshairs"></i> Определить
                     </button>
                 </div>
 
@@ -801,6 +804,8 @@
         document.getElementById('searchInput').addEventListener('input', handleSearch);
         document.getElementById('toggleFavoriteBtn').addEventListener('click', toggleCurrentFavorite);
         document.getElementById('droneSelect').addEventListener('change', updateDroneSpecs);
+        document.getElementById('locateMeBtn').addEventListener('click', locateMe);
+        
         
         document.addEventListener('click', (e) => {
             if(!e.target.closest('.form-group')) {
@@ -1095,6 +1100,46 @@
             Math.sin(dLon / 2) * Math.sin(dLon / 2);
         const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
         return R * c; // Distance in km
+    }
+
+    function locateMe() {
+        if (!navigator.geolocation) {
+            showToast('Геолокация не поддерживается вашим браузером.', 'error');
+            return;
+        }
+
+        showToast('Определение вашего местоположения...', 'info');
+
+        navigator.geolocation.getCurrentPosition(
+            (position) => {
+                const { latitude, longitude } = position.coords;
+                showToast(`Координаты получены. Поиск аэропорта...`, 'info');
+                
+                const nearestAirport = findNearestAirport(latitude, longitude);
+
+                if (nearestAirport) {
+                    selectAirport(nearestAirport);
+                    showToast(`Выбран ближайший аэропорт: ${nearestAirport.name}`, 'success');
+                } else {
+                    showToast('Не удалось найти аэропорты поблизости.', 'error');
+                }
+            },
+            (error) => {
+                let errorMessage = 'Не удалось определить местоположение.';
+                switch(error.code) {
+                    case error.PERMISSION_DENIED:
+                        errorMessage = "Вы запретили доступ к геолокации.";
+                        break;
+                    case error.POSITION_UNAVAILABLE:
+                        errorMessage = "Информация о местоположении недоступна.";
+                        break;
+                    case error.TIMEOUT:
+                        errorMessage = "Истекло время ожидания запроса геолокации.";
+                        break;
+                }
+                showToast(errorMessage, 'error');
+            }
+        );
     }
 
     /* ================= 7. ПОЛЬЗОВАТЕЛЬСКИЕ ДРОНЫ ================= */
@@ -1770,9 +1815,15 @@
 
                     rain: hasPrecipitation,
 
-                    weatherPhenomena: weatherPhenomena,
+                                        weatherPhenomena: weatherPhenomena,
 
-                    hasDangerousPhenomena: weatherPhenomena.dangerous.length > 0
+                                        hasDangerousPhenomena: weatherPhenomena.dangerous.length > 0,
+
+                                        timezone: data.timezone,
+
+                                        sunrise: data.sys.sunrise,
+
+                                        sunset: data.sys.sunset
 
                 }
 
@@ -2418,15 +2469,29 @@
 
     
 
-            const badge = document.getElementById('statusBadge');
-
-            const recList = document.getElementById('recList');
-
-            recList.innerHTML = '';
+                                                const badge = document.getElementById('statusBadge');
 
     
 
-            // Проверяем есть ли абсолютные запреты
+                                                const recList = document.getElementById('recList');
+
+    
+
+                                                recList.innerHTML = '';
+                                                // Day/Night recommendation
+                                                if (d.sunrise && d.sunset) {
+                                                    const nowUTC = Math.floor(Date.now() / 1000);
+                                                    const isDay = nowUTC > d.sunrise && nowUTC < d.sunset;
+                                                    if (isDay) {
+                                                        recList.innerHTML += `<li><i class="fas fa-sun" style="color:#f59e0b;"></i> Полет выполняется в светлое время суток.</li>`;
+                                                    } else {
+                                                        recList.innerHTML += `<li><i class="fas fa-moon" style="color:#94a3b8;"></i> <strong>ВНИМАНИЕ:</strong> Полет выполняется в темное время суток.</li>`;
+                                                        issues.push('Ночные полеты требуют специальной подготовки и оборудования.');
+                                                        issues.push('Убедитесь, что навигационные огни дрона исправны и хорошо видны.');
+                                                        issues.push('Соблюдайте правила визуального контакта с дроном (VLOS).');
+                                                    }
+                                                }
+                                                // Проверяем есть ли абсолютные запреты
 
             const hasAbsoluteBan = d.hasDangerousPhenomena || (d.rain && !drone.rain);
 
